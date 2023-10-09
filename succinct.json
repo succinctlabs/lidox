@@ -1,0 +1,14 @@
+{
+    "entrypoints": [
+        {
+            "name": "v1",
+            "framework": "plonky2",
+            "baseDir": ".",
+            "buildCommand": "cargo run --release --bin v1 build && mv ./target/release/v1 ./build/v1",
+            "proveCommand": "RUST_LOG=debug ./build/v1 prove-wrapped --input-json input.json --wrapper-path /verifier-build",
+            "requiredArtifacts": [
+                "v1"
+            ]
+        }
+    ]
+}
