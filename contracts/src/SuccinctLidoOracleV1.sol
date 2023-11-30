@@ -1,44 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-/// @title ISuccinctGateway
-/// @dev The gateway automatically verifies the proof and calls the callback function.
-interface ISuccinctGateway {
-    function requestCallback(
-        bytes32 functionId,
-        bytes memory input,
-        bytes memory context,
-        bytes4 callbackSelector,
-        uint32 callbackGasLimit
-    ) external payable returns (bytes32);
-
-    function requestCall(
-        bytes32 functionId,
-        bytes memory input,
-        address entryAddress,
-        bytes memory entryData,
-        uint32 entryGasLimit
-    ) external payable;
-
-    function verifiedCall(bytes32 functionId, bytes memory input)
-        external
-        view
-        returns (bytes memory);
-
-    function isCallback() external view returns (bool);
-}
-
-interface LidoZKOracle {
-    function getReport(uint256 slot)
-        external
-        view
-        returns (
-            bool success,
-            uint256 clBalanceGwei,
-            uint256 numValidators,
-            uint256 exitedValidators
-        );
-}
+import "./interfaces/ISuccinctGateway.sol";
+import "./interfaces/LidoZKOracle.sol";
 
 /// @title SuccinctLidoOracleV1
 /// @notice A demo of how the Succinct SDK can be used to augment the security of the Lido Oracle.
@@ -67,8 +31,6 @@ contract SuccinctLidoOracleV1 is LidoZKOracle {
     event LidoOracleV1Update(
         uint64 slot, uint256 clBalancesGwei, uint256 numValidators, uint256 numExitedValidators
     );
-
-    error BlockRootNotFound(uint64 slot);
 
     /// @notice The entrypoint for requesting an oracle update.
     function requestUpdate(bytes32 blockRoot, uint64 slot, uint32 callbackGasLimit)
