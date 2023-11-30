@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 ethers = "2.0.9"
 plonky2 = { git = "https://github.com/mir-protocol/plonky2.git", default-features = false}
-plonky2x = { git = "https://github.com/succinctlabs/succinctx.git", branch = "john/fix-validator-struct-v2" }
+plonky2x = { git = "https://github.com/succinctlabs/succinctx.git" }
 dotenv = "0.15.0"
 env_logger = "0.10.0"
 itertools = "0.11.0"
