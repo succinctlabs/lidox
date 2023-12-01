@@ -18,7 +18,7 @@
 use itertools::Itertools;
 use plonky2::plonk::config::{AlgebraicHasher, GenericConfig};
 use plonky2x::backend::circuit::{Circuit, PlonkParameters};
-use plonky2x::backend::function::VerifiableFunction;
+use plonky2x::backend::function::Plonky2xFunction;
 use plonky2x::frontend::eth::beacon::vars::{BeaconBalancesVariable, BeaconValidatorsVariable};
 use plonky2x::frontend::mapreduce::generator::MapReduceGenerator;
 use plonky2x::frontend::uint::uint64::U64Variable;
@@ -29,7 +29,7 @@ use plonky2x::prelude::{Bytes32Variable, CircuitBuilder, HintRegistry};
 const SLOTS_PER_EPOCH: u64 = 32;
 
 /// The number of validators to fetch (if testing locally, set this to something much smaller).
-const NB_VALIDATORS: usize = 1048576;
+const NB_VALIDATORS: usize = 2097152;
 
 /// The batch size for fetching balances and computing the local balance roots.
 const BATCH_SIZE: usize = 512;
@@ -225,7 +225,7 @@ impl Circuit for LidoOracleV1 {
 }
 
 fn main() {
-    VerifiableFunction::<LidoOracleV1>::entrypoint();
+    LidoOracleV1::entrypoint();
 }
 
 #[cfg(test)]
