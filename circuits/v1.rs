@@ -29,7 +29,7 @@ use plonky2x::prelude::{Bytes32Variable, CircuitBuilder, HintRegistry};
 const SLOTS_PER_EPOCH: u64 = 32;
 
 /// The number of validators to fetch (if testing locally, set this to something much smaller).
-const NB_VALIDATORS: usize = 2097152;
+const NB_VALIDATORS: usize = 131072;
 
 /// The batch size for fetching balances and computing the local balance roots.
 const BATCH_SIZE: usize = 512;

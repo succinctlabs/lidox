@@ -19,7 +19,8 @@ contract SuccinctLidoOracleV1 is LidoZKOracle {
         0x010000000000000000000000b9d7934878b5fb9610b3fe8a5e441e8fad7e293f;
 
     struct Report {
-        bool exists;
+        bool requested;
+        bool received;
         uint256 clBalanceGwei;
         uint256 numValidators;
         uint256 exitedValidators;
@@ -41,6 +42,8 @@ contract SuccinctLidoOracleV1 is LidoZKOracle {
             msg.sender == address(0xDEd0000E32f8F40414d3ab3a830f735a3553E18e),
             "only owner can request proof"
         );
+        require(!reports[uint256(slot)].requested, "already requested");
+        reports[uint256(slot)].requested = true;
         // TODO: Post EIP-4778, we will get block hash directly from on chain.
         ISuccinctGateway(FUNCTION_GATEWAY).requestCallback{value: msg.value}(
             FUNCTION_ID,
@@ -63,7 +66,8 @@ contract SuccinctLidoOracleV1 is LidoZKOracle {
 
         emit LidoOracleV1Update(slot, clBalancesGwei, numValidators, numExitedValidators);
         reports[uint256(slot)] = Report({
-            exists: true,
+            requested: true,
+            received: true,
             clBalanceGwei: clBalancesGwei,
             numValidators: numValidators,
             exitedValidators: numExitedValidators
@@ -77,7 +81,8 @@ contract SuccinctLidoOracleV1 is LidoZKOracle {
         returns (bool, uint256, uint256, uint256)
     {
         Report memory report = reports[slot];
-        return (report.exists, report.clBalanceGwei, report.numValidators, report.exitedValidators);
+        return
+            (report.received, report.clBalanceGwei, report.numValidators, report.exitedValidators);
     }
 
     /// @dev A helper function to read a uint64, uint32, and uint32 from a bytes array.
