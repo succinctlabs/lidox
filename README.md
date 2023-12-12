@@ -1,22 +1,28 @@
 # lido-oracle-demo
 
 This repo implements a fully-working POC of correctly calculating the total Lido reserves, number of
-validators ever deposited, and number of exited validators in ZK across all ~1M validators on Goerli
-for ~300k gas.  
+validators ever deposited, and number of exited validators in ZK across all ~2M validators
+for ~300k gas.
 
-It is built using [plonky2x](https://github.com/succinctlabs/succinctx) proving system and deployed 
+It is built using [plonky2x](https://github.com/succinctlabs/succinctx) proving system and deployed
 with the [Succinct SDK](https://github.com/succinctlabs/succinctx).
 
-## Installation
+## Circuit Logic
 
-To test things locally, we suggest setting `NB_VALIDATORS=1024` inside `v1.rs`. Otherwise, the 
-proving times will be very long.
+1. From the input beacon block root, prove the validator and balance tree roots.
+   - Note: we actually prove a subset of the full trees because most of the values are zero.
+2. In a mapreduce-like system:
+   1. Map the validators into batches of 512, and for each batch, calculate the total balances, validators, and exited validators. Additionally, compute the merkle hashes of this batch's balances and validators within the full validator tree.
+   2. Reduce the batch roots in pairs to form a single validator root and single balance root.
+3. Confirm that the resulting validator and balance root are correct.
+4. Output the result data.
+
+## Installation
 
 To run the test locally:
 
 ```
-export RUST_LOG=debug
-cargo test --package lido-oracle-demo --bin v1 --release -- tests --nocapture
+RUST_LOG=debug cargo test test_circuit --release -- --nocapture
 ```
 
 ## Contracts

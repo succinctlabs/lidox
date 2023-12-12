@@ -28,16 +28,16 @@ use plonky2x::prelude::{Bytes32Variable, CircuitBuilder, HintRegistry};
 /// The number of slots per epoch in the consensus layer.
 const SLOTS_PER_EPOCH: u64 = 32;
 
-/// The number of validators to fetch (if testing locally, set this to something much smaller).
+/// The number of validators to fetch.
 const NB_VALIDATORS: usize = 2097152;
 
 /// The batch size for fetching balances and computing the local balance roots.
 const BATCH_SIZE: usize = 512;
 
 #[derive(Debug, Clone)]
-struct LidoOracleV1;
+struct LidoOracleV1<const N: usize>;
 
-impl Circuit for LidoOracleV1 {
+impl<const N: usize> Circuit for LidoOracleV1<N> {
     fn define<L: PlonkParameters<D>, const D: usize>(builder: &mut CircuitBuilder<L, D>)
     where
         <<L as PlonkParameters<D>>::Config as GenericConfig<D>>::Hasher:
@@ -54,9 +54,9 @@ impl Circuit for LidoOracleV1 {
         let epoch = builder.div(slot, slots_per_epoch).to_u256(builder);
 
         // Get the validators and balances root.
-        let validators = builder.beacon_get_partial_validators::<NB_VALIDATORS>(block_root);
-        let balances = builder.beacon_get_partial_balances::<NB_VALIDATORS>(block_root);
-        let idxs = (0..NB_VALIDATORS).map(|i| i as u64).collect_vec();
+        let validators = builder.beacon_get_partial_validators::<N>(block_root);
+        let balances = builder.beacon_get_partial_balances::<N>(block_root);
+        let idxs = (0..N).map(|i| i as u64).collect_vec();
 
         let output = builder.mapreduce::<(
             BeaconValidatorsVariable,
@@ -147,7 +147,7 @@ impl Circuit for LidoOracleV1 {
                 let validators_root = builder.ssz_hash_leafs(&validator_leafs);
                 let balances_root = builder.ssz_hash_leafs(&balance_leafs);
 
-                // Return the parial roots and statistics.
+                // Return the partial roots and statistics.
                 (
                     validators_root,
                     balances_root,
@@ -225,7 +225,7 @@ impl Circuit for LidoOracleV1 {
 }
 
 fn main() {
-    LidoOracleV1::entrypoint();
+    LidoOracleV1::<NB_VALIDATORS>::entrypoint();
 }
 
 #[cfg(test)]
@@ -239,14 +239,16 @@ mod tests {
     type L = DefaultParameters;
     const D: usize = 2;
 
-    /// An example source block root (slot 6984000).
-    const BLOCK_ROOT: &str = "0x49869d23ba93a746cc8ea649a48bb6c4b2159cf3a71aef492af63dac27522c9f";
+    /// An example source block root (mainnet slot 7959300).
+    const BLOCK_ROOT: &str = "0x46da8a07811bd86a9430d8d188afc39e19e84414df6c82ac99a31a94d556d5f4";
 
-    /// The withdrawal credentials of Lido validators.
-    const LIDO_WITHDRAWAL_CREDENTIALS: &str =
-        "0x010000000000000000000000b9d7934878b5fb9610b3fe8a5e441e8fad7e293f";
+    /// Test withdrawal credentials, used by 400 of the first 1024 mainnet validators.
+    const WITHDRAWAL_CREDENTIALS: &str =
+        "0x010000000000000000000000f4d1645dd1a8a44a3dd197cba2626161b01163c5";
 
-    /// A test of the circuit on slot 6984000.
+    const TEST_NB_VALIDATORS: usize = 1024;
+
+    /// A test of the circuit on slot 7959300.
     ///
     /// The expected outputs were calculated from the original lido-oracle repo from [1].
     ///
@@ -257,15 +259,15 @@ mod tests {
         dotenv::dotenv().ok();
 
         // Build the circuit.
-        debug!("NB_VALIDATORS: {}", NB_VALIDATORS);
+        debug!("TEST_NB_VALIDATORS: {}", TEST_NB_VALIDATORS);
         let mut builder = CircuitBuilder::<L, D>::new();
-        LidoOracleV1::define(&mut builder);
+        LidoOracleV1::<TEST_NB_VALIDATORS>::define(&mut builder);
         let circuit = builder.build();
 
         // Generate input.
         let mut input = circuit.input();
         input.evm_write::<Bytes32Variable>(bytes32!(BLOCK_ROOT));
-        input.evm_write::<Bytes32Variable>(bytes32!(LIDO_WITHDRAWAL_CREDENTIALS));
+        input.evm_write::<Bytes32Variable>(bytes32!(WITHDRAWAL_CREDENTIALS));
 
         // Generate the proof and verify.
         let (proof, mut output) = circuit.prove(&input);
@@ -281,13 +283,11 @@ mod tests {
         debug!("> numExitedValidators: {}", num_exited_validators);
 
         // Assert output.
-        if NB_VALIDATORS == 1048576 {
-            assert_eq!(cl_balances_gwei, 7880438321299961);
-            assert_eq!(num_validators, 247929);
-            assert_eq!(num_exited_validators, 1739);
-        }
+        assert_eq!(cl_balances_gwei, 12804421770945);
+        assert_eq!(num_validators, 400);
+        assert_eq!(num_exited_validators, 0);
 
         // Test circuit serialization.
-        LidoOracleV1::test_serialization::<L, D>();
+        LidoOracleV1::<TEST_NB_VALIDATORS>::test_serialization::<L, D>();
     }
 }

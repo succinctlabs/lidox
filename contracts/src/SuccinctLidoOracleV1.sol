@@ -8,18 +8,32 @@ import "./interfaces/LidoZKOracle.sol";
 /// @notice A demo of how the Succinct SDK can be used to augment the security of the Lido Oracle.
 contract SuccinctLidoOracleV1 is LidoZKOracle {
     /// @notice The address of the function gateway.
-    address public constant FUNCTION_GATEWAY = 0x852a94F8309D445D27222eDb1E92A4E83DdDd2a8;
+    address public immutable FUNCTION_GATEWAY;
 
     /// @notice The function id of the consensus oracle.
-    bytes32 public constant FUNCTION_ID =
-        0xd1d8fa90aa718adcfc579e81592bd5ba57ffd196e8dce05a256d1e6cf89adea3;
+    bytes32 public immutable FUNCTION_ID;
 
     /// @notice The withdrawal credential of all Lido validators.
-    bytes32 public constant LIDO_WITHDRAWAL_CREDENTIAL =
-        0x010000000000000000000000b9d7934878b5fb9610b3fe8a5e441e8fad7e293f;
+    bytes32 public immutable LIDO_WITHDRAWAL_CREDENTIAL;
+
+    /// @notice The address of the requester.
+    address public immutable REQUESTER;
+
+    constructor(
+        address _functionGateway,
+        bytes32 _functionId,
+        bytes32 _lidoWithdrawalCredential,
+        address _requester
+    ) {
+        FUNCTION_GATEWAY = _functionGateway;
+        FUNCTION_ID = _functionId;
+        LIDO_WITHDRAWAL_CREDENTIAL = _lidoWithdrawalCredential;
+        REQUESTER = _requester;
+    }
 
     struct Report {
-        bool exists;
+        bool requested;
+        bool received;
         uint256 clBalanceGwei;
         uint256 numValidators;
         uint256 exitedValidators;
@@ -37,10 +51,9 @@ contract SuccinctLidoOracleV1 is LidoZKOracle {
         external
         payable
     {
-        require(
-            msg.sender == address(0xDEd0000E32f8F40414d3ab3a830f735a3553E18e),
-            "only owner can request proof"
-        );
+        require(msg.sender == address(REQUESTER), "only requester can request proof");
+        require(!reports[uint256(slot)].requested, "already requested");
+        reports[uint256(slot)].requested = true;
         // TODO: Post EIP-4778, we will get block hash directly from on chain.
         ISuccinctGateway(FUNCTION_GATEWAY).requestCallback{value: msg.value}(
             FUNCTION_ID,
@@ -63,7 +76,8 @@ contract SuccinctLidoOracleV1 is LidoZKOracle {
 
         emit LidoOracleV1Update(slot, clBalancesGwei, numValidators, numExitedValidators);
         reports[uint256(slot)] = Report({
-            exists: true,
+            requested: true,
+            received: true,
             clBalanceGwei: clBalancesGwei,
             numValidators: numValidators,
             exitedValidators: numExitedValidators
@@ -77,7 +91,8 @@ contract SuccinctLidoOracleV1 is LidoZKOracle {
         returns (bool, uint256, uint256, uint256)
     {
         Report memory report = reports[slot];
-        return (report.exists, report.clBalanceGwei, report.numValidators, report.exitedValidators);
+        return
+            (report.received, report.clBalanceGwei, report.numValidators, report.exitedValidators);
     }
 
     /// @dev A helper function to read a uint64, uint32, and uint32 from a bytes array.
