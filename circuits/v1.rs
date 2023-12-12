@@ -19,6 +19,7 @@ use itertools::Itertools;
 use plonky2::plonk::config::{AlgebraicHasher, GenericConfig};
 use plonky2x::backend::circuit::{Circuit, PlonkParameters};
 use plonky2x::backend::function::Plonky2xFunction;
+use plonky2x::frontend::eth::beacon::generators::BeaconPartialValidatorsHint;
 use plonky2x::frontend::eth::beacon::vars::{BeaconBalancesVariable, BeaconValidatorsVariable};
 use plonky2x::frontend::mapreduce::generator::MapReduceGenerator;
 use plonky2x::frontend::uint::uint64::U64Variable;
@@ -221,6 +222,7 @@ impl<const N: usize> Circuit for LidoOracleV1<N> {
             BATCH_SIZE,
             D,
         >>(id);
+        registry.register_hint::<BeaconPartialValidatorsHint<N>>();
     }
 }
 
