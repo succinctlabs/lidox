@@ -147,7 +147,7 @@ impl<const N: usize> Circuit for LidoOracleV1<N> {
                 let validators_root = builder.ssz_hash_leafs(&validator_leafs);
                 let balances_root = builder.ssz_hash_leafs(&balance_leafs);
 
-                // Return the parial roots and statistics.
+                // Return the partial roots and statistics.
                 (
                     validators_root,
                     balances_root,
