@@ -57,127 +57,91 @@ impl<const N: usize> Circuit for LidoOracleV1<N> {
         let epoch = builder.div(slot, slots_per_epoch).to_u256(builder);
 
         // Get the validators and balances root.
-        let validators = builder.beacon_get_partial_validators::<N>(block_root);
-        let balances = builder.beacon_get_partial_balances::<N>(block_root);
-        let idxs = (0..N).map(|i| i as u64).collect_vec();
+        let validators = builder.beacon_get_partial_validators::<BATCH_SIZE>(block_root);
+        let balances = builder.beacon_get_partial_balances::<BATCH_SIZE>(block_root);
+        let idxs = (0..BATCH_SIZE).map(|i| i as u64).collect_vec();
 
-        let output = builder.mapreduce::<(
-            BeaconValidatorsVariable,
-            BeaconBalancesVariable,
-            U256Variable,
-            Bytes32Variable,
-        ), U64Variable, (
-            Bytes32Variable,
-            Bytes32Variable,
-            U64Variable,
-            U32Variable,
-            U32Variable,
-        ), Self, BATCH_SIZE, _, _>(
-            (validators, balances, epoch, withdrawal_credentials),
-            idxs,
-            |(validators, balances, epoch, withdrawal_credentials), idxs, builder| {
-                // Witness validators.
-                let validators =
-                    builder.beacon_witness_validator_batch::<BATCH_SIZE>(validators, idxs[0]);
+        // Witness validators.
+        let start_idx = builder.constant::<U64Variable>(idxs[0]);
+        let validators_witness =
+            builder.beacon_witness_validator_batch::<BATCH_SIZE>(validators, start_idx);
 
-                // Witness balances.
-                let balances =
-                    builder.beacon_witness_balance_batch::<BATCH_SIZE>(balances, idxs[0]);
+        // Witness balances.
+        let balances_witness =
+            builder.beacon_witness_balance_batch::<BATCH_SIZE>(balances, start_idx);
 
-                // Compute the SSZ leaf representation of the validators.
-                let mut validator_leafs = Vec::new();
-                for i in 0..validators.len() {
-                    let validator_root = validators[i].hash_tree_root(builder);
-                    validator_leafs.push(validator_root);
-                }
+        // Compute the SSZ leaf representation of the validators.
+        let mut validator_leafs = Vec::new();
+        for i in 0..validators_witness.len() {
+            let validator_root = validators_witness[i].hash_tree_root(builder);
+            validator_leafs.push(validator_root);
+        }
 
-                // Compute whether the validator matches the provided withdrawal credentials and
-                // satisfies validator.activation_epoch <= epoch < validator.exit_epoch.
-                let one = builder.one::<U32Variable>();
-                let mut num_validators = builder.zero::<U32Variable>();
-                let mut num_exited_validators = builder.zero::<U32Variable>();
-                let mut mask = Vec::new();
-                for i in 0..validators.len() {
-                    // Compute validator.withdrawal_credentials == withdrawal_credentials.
-                    let withdrawal_credentials_match = builder
-                        .is_equal(validators[i].withdrawal_credentials, withdrawal_credentials);
-                    mask.push(withdrawal_credentials_match);
+        // Compute whether the validator matches the provided withdrawal credentials and
+        // satisfies validator.activation_epoch <= epoch < validator.exit_epoch.
+        let one = builder.one::<U32Variable>();
+        let mut num_validators = builder.zero::<U32Variable>();
+        let mut num_exited_validators = builder.zero::<U32Variable>();
+        let mut mask = Vec::new();
+        for i in 0..validators_witness.len() {
+            // Compute validator.withdrawal_credentials == withdrawal_credentials.
+            let withdrawal_credentials_match = builder.is_equal(
+                validators_witness[i].withdrawal_credentials,
+                withdrawal_credentials,
+            );
+            mask.push(withdrawal_credentials_match);
 
-                    // Add to the total validator count.
-                    let num_validators_plus_one = builder.add(num_validators, one);
-                    num_validators = builder.select(
-                        withdrawal_credentials_match,
-                        num_validators_plus_one,
-                        num_validators,
-                    );
+            // Add to the total validator count.
+            let num_validators_plus_one = builder.add(num_validators, one);
+            num_validators = builder.select(
+                withdrawal_credentials_match,
+                num_validators_plus_one,
+                num_validators,
+            );
 
-                    // Check whether it is an exited validator. If it is, add to the
-                    // total exited validator count.
-                    let is_exited_validator = builder.gte(epoch, validators[i].exit_epoch);
-                    let is_exited_validator =
-                        builder.and(withdrawal_credentials_match, is_exited_validator);
-                    let num_exited_validators_plus_one = builder.add(num_exited_validators, one);
-                    num_exited_validators = builder.select(
-                        is_exited_validator,
-                        num_exited_validators_plus_one,
-                        num_exited_validators,
-                    );
-                }
+            // Check whether it is an exited validator. If it is, add to the
+            // total exited validator count.
+            let is_exited_validator = builder.gte(epoch, validators_witness[i].exit_epoch);
+            let is_exited_validator =
+                builder.and(withdrawal_credentials_match, is_exited_validator);
+            let num_exited_validators_plus_one = builder.add(num_exited_validators, one);
+            num_exited_validators = builder.select(
+                is_exited_validator,
+                num_exited_validators_plus_one,
+                num_exited_validators,
+            );
+        }
 
-                // Convert balances to leafs.
-                let mut balance_leafs = Vec::new();
-                let zero = builder.zero::<U64Variable>();
-                let mut cl_balances_gwei = builder.zero::<U64Variable>();
-                for i in 0..idxs.len() / 4 {
-                    let balances = [
-                        balances[i * 4],
-                        balances[i * 4 + 1],
-                        balances[i * 4 + 2],
-                        balances[i * 4 + 3],
-                    ];
-                    let masked_balances = [
-                        builder.select(mask[i * 4], balances[0], zero),
-                        builder.select(mask[i * 4 + 1], balances[1], zero),
-                        builder.select(mask[i * 4 + 2], balances[2], zero),
-                        builder.select(mask[i * 4 + 3], balances[3], zero),
-                    ];
-                    let cl_balances_gwei_term = builder.add_many(&masked_balances);
-                    cl_balances_gwei = builder.add(cl_balances_gwei, cl_balances_gwei_term);
-                    balance_leafs.push(builder.beacon_u64s_to_leaf(balances));
-                }
+        // Convert balances to leafs.
+        let mut balance_leafs = Vec::new();
+        let zero = builder.zero::<U64Variable>();
+        let mut cl_balances_gwei = builder.zero::<U64Variable>();
+        for i in 0..idxs.len() / 4 {
+            let balances = [
+                balances_witness[i * 4],
+                balances_witness[i * 4 + 1],
+                balances_witness[i * 4 + 2],
+                balances_witness[i * 4 + 3],
+            ];
+            let masked_balances = [
+                builder.select(mask[i * 4], balances[0], zero),
+                builder.select(mask[i * 4 + 1], balances[1], zero),
+                builder.select(mask[i * 4 + 2], balances[2], zero),
+                builder.select(mask[i * 4 + 3], balances[3], zero),
+            ];
+            let cl_balances_gwei_term = builder.add_many(&masked_balances);
+            cl_balances_gwei = builder.add(cl_balances_gwei, cl_balances_gwei_term);
+            balance_leafs.push(builder.beacon_u64s_to_leaf(balances));
+        }
+        let validators_root = builder.ssz_hash_leafs(&validator_leafs);
+        let balances_root = builder.ssz_hash_leafs(&balance_leafs);
 
-                // Reduce validator leafs to a single root.
-                let validators_root = builder.ssz_hash_leafs(&validator_leafs);
-                let balances_root = builder.ssz_hash_leafs(&balance_leafs);
-
-                // Return the partial roots and statistics.
-                (
-                    validators_root,
-                    balances_root,
-                    cl_balances_gwei,
-                    num_validators,
-                    num_exited_validators,
-                )
-            },
-            |_, left, right, builder| {
-                (
-                    builder.sha256_pair(left.0, right.0),
-                    builder.sha256_pair(left.1, right.1),
-                    builder.add(left.2, right.2),
-                    builder.add(left.3, right.3),
-                    builder.add(left.4, right.4),
-                )
-            },
-        );
-
-        // Assert that the reconstructed commitments match to what we proved exists in the block.
-        builder.assert_is_equal(output.0, validators.validators_root);
-        builder.assert_is_equal(output.1, balances.root);
-
-        // Write outputs back to the EVM.
-        builder.evm_write::<U64Variable>(output.2);
-        builder.evm_write::<U32Variable>(output.3);
-        builder.evm_write::<U32Variable>(output.4);
+        // Return the partial roots and statistics.
+        builder.evm_write::<Bytes32Variable>(validators_root);
+        builder.evm_write::<Bytes32Variable>(balances_root);
+        builder.evm_write::<U64Variable>(cl_balances_gwei);
+        builder.evm_write::<U32Variable>(num_validators);
+        builder.evm_write::<U32Variable>(num_exited_validators);
     }
 
     fn register_generators<L: PlonkParameters<D>, const D: usize>(registry: &mut HintRegistry<L, D>)
@@ -279,10 +243,14 @@ mod tests {
         circuit.verify(&proof, &input, &output);
 
         // Read output.
+        let validators_root = output.evm_read::<Bytes32Variable>();
+        let balances_root = output.evm_read::<Bytes32Variable>();
         let cl_balances_gwei = output.evm_read::<U64Variable>();
         let num_validators = output.evm_read::<U32Variable>();
         let num_exited_validators = output.evm_read::<U32Variable>();
         debug!("oracle report");
+        debug!("> validatorsRoot: {}", validators_root);
+        debug!("> balancesRoot: {}", balances_root);
         debug!("> clBalancesGwei: {}", cl_balances_gwei);
         debug!("> numValidators: {}", num_validators);
         debug!("> numExitedValidators: {}", num_exited_validators);
