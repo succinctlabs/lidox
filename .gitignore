@@ -6,3 +6,5 @@
 **/cache
 **/out
 build/
+dist/
+tsconfig.tsbuildinfo
