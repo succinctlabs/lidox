@@ -224,7 +224,7 @@ impl<const N: usize> Circuit for LidoOracleV1<N> {
             BATCH_SIZE,
             D,
         >>(id);
-        if N > 2 ^ 20 {
+        if N > usize::pow(2, 20) {
             registry.register_hint::<BeaconPartialValidatorsHint<N>>();
             registry.register_hint::<BeaconPartialBalancesHint<N>>();
         }
