@@ -693,7 +693,7 @@ dependencies = [
 [[package]]
 name = "curta"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/curta.git#bd14c11a17827042109dd9ba1771365070ebc98f"
+source = "git+https://github.com/succinctlabs/curta.git#c4dd8dd43709134051303f1353dd4131078faca6"
 dependencies = [
  "anyhow",
  "bincode",
@@ -2672,7 +2672,7 @@ checksum = "14e6ab3f592e6fb464fc9712d8d6e6912de6473954635fd76a589d832cffcbb0"
 [[package]]
 name = "plonky2"
 version = "0.1.4"
-source = "git+https://github.com/mir-protocol/plonky2.git#bfcfcdb498d253ff33121dba03a130be89fcc96c"
+source = "git+https://github.com/mir-protocol/plonky2.git#f67ee258a172848a96fee20196a0151178a61ae6"
 dependencies = [
  "ahash",
  "anyhow",
@@ -2696,7 +2696,7 @@ dependencies = [
 [[package]]
 name = "plonky2_field"
 version = "0.1.1"
-source = "git+https://github.com/mir-protocol/plonky2.git#bfcfcdb498d253ff33121dba03a130be89fcc96c"
+source = "git+https://github.com/mir-protocol/plonky2.git#f67ee258a172848a96fee20196a0151178a61ae6"
 dependencies = [
  "anyhow",
  "itertools 0.11.0",
@@ -2720,7 +2720,7 @@ dependencies = [
 [[package]]
 name = "plonky2_maybe_rayon"
 version = "0.1.1"
-source = "git+https://github.com/mir-protocol/plonky2.git#bfcfcdb498d253ff33121dba03a130be89fcc96c"
+source = "git+https://github.com/mir-protocol/plonky2.git#f67ee258a172848a96fee20196a0151178a61ae6"
 dependencies = [
  "rayon",
 ]
@@ -2728,12 +2728,12 @@ dependencies = [
 [[package]]
 name = "plonky2_util"
 version = "0.1.1"
-source = "git+https://github.com/mir-protocol/plonky2.git#bfcfcdb498d253ff33121dba03a130be89fcc96c"
+source = "git+https://github.com/mir-protocol/plonky2.git#f67ee258a172848a96fee20196a0151178a61ae6"
 
 [[package]]
 name = "plonky2x"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/succinctx.git#38340176b4aea3d55a116762e2b1fd101c6a5ba5"
+source = "git+https://github.com/succinctlabs/succinctx.git#f3bcbe734dbcfb5cf1d91bb107eca76e08860f94"
 dependencies = [
  "anyhow",
  "array-macro",
@@ -2775,7 +2775,7 @@ dependencies = [
 [[package]]
 name = "plonky2x-derive"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/succinctx.git#38340176b4aea3d55a116762e2b1fd101c6a5ba5"
+source = "git+https://github.com/succinctlabs/succinctx.git#f3bcbe734dbcfb5cf1d91bb107eca76e08860f94"
 dependencies = [
  "proc-macro2",
  "quote",
