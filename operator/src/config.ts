@@ -6,7 +6,6 @@ export type Config = {
   chainId: number;
   consensusChainId: number;
   functionId: Hex;
-  intervalMs: number;
 };
 
 export const ALL_CONFIGS: Record<string, Config> = {
@@ -17,6 +16,5 @@ export const ALL_CONFIGS: Record<string, Config> = {
     consensusChainId: 17000,
     functionId:
       "0x7cf538c3c8d0a25c74c98b8022517c64cb4a0bf0213b56274a3c134ab1d10435",
-    intervalMs: 1000 * 60 * 60 * 24,
   },
 };

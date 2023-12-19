@@ -38,5 +38,5 @@ async function runOperator(configName: string) {
     return;
   }
   const operator = new Operator(config);
-  await operator.run();
+  await operator.start();
 }

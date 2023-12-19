@@ -2,6 +2,7 @@ import { ConsensusClient } from "@succinctlabs/circomx";
 import axios from "axios";
 import {
   Chain,
+  GetContractReturnType,
   Hex,
   PrivateKeyAccount,
   PublicClient,
@@ -35,6 +36,17 @@ export class Operator {
   account: PrivateKeyAccount;
   chain: Chain;
 
+  succinctOracle?: GetContractReturnType<
+    typeof SUCCINCT_LIDO_ORACLE_V1_ABI,
+    PublicClient,
+    WalletClient
+  >;
+  lidoHashConsensus?: GetContractReturnType<
+    typeof LIDO_HASH_CONSENSUS_ABI,
+    PublicClient,
+    WalletClient
+  >;
+  initialEpoch?: bigint;
   stopped = false;
 
   constructor(config: Config) {
@@ -106,7 +118,51 @@ export class Operator {
     };
   }
 
+  async initialize() {
+    console.log("Initializaing operator...");
+    this.succinctOracle = getContract({
+      abi: SUCCINCT_LIDO_ORACLE_V1_ABI,
+      address: this.config.succinctOracleAddress,
+      publicClient: this.client.target,
+      walletClient: this.client.wallet,
+    });
+
+    const lidoLocator = getContract({
+      abi: LIDO_LOCATOR_ABI,
+      address: this.config.lidoLocatorAddress,
+      publicClient: this.client.source,
+    });
+
+    const accountingOracleAddress = await lidoLocator.read.accountingOracle();
+
+    const lidoAccountingOracle = getContract({
+      abi: LIDO_ACCOUNTING_ORACLE_ABI,
+      address: accountingOracleAddress,
+      publicClient: this.client.source,
+    });
+
+    const lidoHashConsensusAddress =
+      await lidoAccountingOracle.read.getConsensusContract();
+
+    this.lidoHashConsensus = getContract({
+      abi: LIDO_HASH_CONSENSUS_ABI,
+      address: lidoHashConsensusAddress,
+      publicClient: this.client.source,
+    });
+
+    [this.initialEpoch] = await this.lidoHashConsensus.read.getFrameConfig();
+
+    console.log("Initial epoch:", this.initialEpoch);
+  }
+
   async start() {
+    try {
+      await this.initialize();
+    } catch (e) {
+      console.error("Error initializing:", e);
+      return;
+    }
+
     process.on("SIGINT", () => {
       if (this.stopped) {
         console.log("Force stopping..");
@@ -118,8 +174,7 @@ export class Operator {
     });
 
     console.log("Starting operator...");
-    this.run();
-    console.log("Operator started.");
+    await this.run();
   }
 
   async run() {
@@ -129,54 +184,35 @@ export class Operator {
       await this.loop();
       console.log("Finished after " + (Date.now() - startTime) / 1000 + "sec.");
 
+      const [currentRefSlot] =
+        await this.lidoHashConsensus!.read.getCurrentFrame();
+      const nextFrameSlot = Number(currentRefSlot) + 225 * 32;
+      const currentSlot = await this.client.consensus
+        .getHeader("finalized")
+        .then((header) => header.slot);
       const timeToSleep = Math.max(
-        this.config.intervalMs - (Date.now() - startTime),
+        (nextFrameSlot - currentSlot) * 12 * 1000,
         0
       );
+
+      console.log(
+        `Next frame slot: ${nextFrameSlot} / Current slot: ${currentSlot}`
+      );
+      console.log("Sleeping for " + timeToSleep / 1000 / 1000 + "min.");
       await new Promise((resolve) => setTimeout(resolve, timeToSleep));
     }
   }
 
   async loop() {
     try {
-      const succinctOracle = getContract({
-        abi: SUCCINCT_LIDO_ORACLE_V1_ABI,
-        address: this.config.succinctOracleAddress,
-        publicClient: this.client.target,
-        walletClient: this.client.wallet,
-      });
-
-      const lidoLocator = getContract({
-        abi: LIDO_LOCATOR_ABI,
-        address: this.config.lidoLocatorAddress,
-        publicClient: this.client.source,
-      });
-
-      const accountingOracleAddress = await lidoLocator.read.accountingOracle();
-
-      const lidoAccountingOracle = getContract({
-        abi: LIDO_ACCOUNTING_ORACLE_ABI,
-        address: accountingOracleAddress,
-        publicClient: this.client.source,
-      });
-
-      const lidoHashConsensusAddress =
-        await lidoAccountingOracle.read.getConsensusContract();
-
-      const lidoHashConsensus = getContract({
-        abi: LIDO_HASH_CONSENSUS_ABI,
-        address: lidoHashConsensusAddress,
-        publicClient: this.client.source,
-      });
-
       const [refSlot, deadlineSlot] =
-        await lidoHashConsensus.read.getCurrentFrame();
+        await this.lidoHashConsensus!.read.getCurrentFrame();
 
       console.log("Ref slot:", refSlot);
 
       // Check if succinct oracle has refSlot
       const [alreadyRequested, alreadyReceived] =
-        await succinctOracle.read.reports([refSlot]);
+        await this.succinctOracle!.read.reports([refSlot]);
       console.log("alreadyRequested:", alreadyRequested);
       console.log("alreadyReceived:", alreadyReceived);
       if (!alreadyReceived) {
@@ -200,10 +236,14 @@ export class Operator {
           finalizedHeader.slot
         );
         const blockRoot = toHexString(hashBeaconBlockHeader(header)) as Hex;
-        await succinctOracle.write.requestUpdate([blockRoot, refSlot, 500000], {
-          account: this.account,
-          chain: this.chain,
-        });
+        console.log("Requesting update: ", blockRoot, refSlot);
+        // await this.succinctOracle!.write.requestUpdate(
+        //   [blockRoot, refSlot, 500000],
+        //   {
+        //     account: this.account,
+        //     chain: this.chain,
+        //   }
+        // );
       } else {
         console.log("Succinct oracle has ref slot");
       }
@@ -219,7 +259,9 @@ async function getFirstNonMissedSlot(
   targetSlot: number,
   finalizedSlot: number
 ) {
+  console.log("Getting first non-missed slot", targetSlot, finalizedSlot);
   for (let i = targetSlot; i <= finalizedSlot; i++) {
+    console.log("Trying slot:", i);
     const header = await tryGetHeader(client, i);
     if (header) return header;
   }
