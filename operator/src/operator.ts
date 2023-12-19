@@ -47,6 +47,9 @@ export class Operator {
     WalletClient
   >;
   initialEpoch?: bigint;
+  epochsPerFrame?: bigint;
+  slotsPerEpoch?: bigint;
+  secondsPerSlot?: bigint;
   stopped = false;
 
   constructor(config: Config) {
@@ -150,9 +153,17 @@ export class Operator {
       publicClient: this.client.source,
     });
 
-    [this.initialEpoch] = await this.lidoHashConsensus.read.getFrameConfig();
+    [this.initialEpoch, this.epochsPerFrame] =
+      await this.lidoHashConsensus.read.getFrameConfig();
 
     console.log("Initial epoch:", this.initialEpoch);
+    console.log("Epochs per frame:", this.epochsPerFrame);
+
+    [this.slotsPerEpoch, this.secondsPerSlot] =
+      await this.lidoHashConsensus.read.getChainConfig();
+
+    console.log("Slots per epoch:", this.slotsPerEpoch);
+    console.log("Seconds per slot:", this.secondsPerSlot);
   }
 
   async start() {
@@ -186,19 +197,19 @@ export class Operator {
 
       const [currentRefSlot] =
         await this.lidoHashConsensus!.read.getCurrentFrame();
-      const nextFrameSlot = Number(currentRefSlot) + 225 * 32;
+      const nextFrameSlot = currentRefSlot + this.epochsPerFrame! * 32n;
       const currentSlot = await this.client.consensus
         .getHeader("finalized")
         .then((header) => header.slot);
       const timeToSleep = Math.max(
-        (nextFrameSlot - currentSlot) * 12 * 1000,
+        (Number(nextFrameSlot) - currentSlot) * 12 * 1000,
         0
       );
 
       console.log(
         `Next frame slot: ${nextFrameSlot} / Current slot: ${currentSlot}`
       );
-      console.log("Sleeping for " + timeToSleep / 1000 / 1000 + "min.");
+      console.log("Sleeping for " + timeToSleep / 1000 / 60 + "min.");
       await new Promise((resolve) => setTimeout(resolve, timeToSleep));
     }
   }
@@ -237,13 +248,14 @@ export class Operator {
         );
         const blockRoot = toHexString(hashBeaconBlockHeader(header)) as Hex;
         console.log("Requesting update: ", blockRoot, refSlot);
-        // await this.succinctOracle!.write.requestUpdate(
-        //   [blockRoot, refSlot, 500000],
-        //   {
-        //     account: this.account,
-        //     chain: this.chain,
-        //   }
-        // );
+
+        await this.succinctOracle!.write.requestUpdate(
+          [blockRoot, refSlot, 500000],
+          {
+            account: this.account,
+            chain: this.chain,
+          }
+        );
       } else {
         console.log("Succinct oracle has ref slot");
       }

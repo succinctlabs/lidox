@@ -1,4 +1,4 @@
-//! A demo of how the Succinct SDK can be used to augment the security of the Lido Oralce.
+//! A demo of how the Succinct SDK can be used to augment the security of the Lido Oracle.
 //!
 //! This circuit calculates the following for a given `beaconBlockRoot` and `withdrawalCredentials`:
 //!
