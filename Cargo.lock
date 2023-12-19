@@ -2672,7 +2672,7 @@ checksum = "14e6ab3f592e6fb464fc9712d8d6e6912de6473954635fd76a589d832cffcbb0"
 [[package]]
 name = "plonky2"
 version = "0.1.4"
-source = "git+https://github.com/mir-protocol/plonky2.git#f67ee258a172848a96fee20196a0151178a61ae6"
+source = "git+https://github.com/mir-protocol/plonky2.git#18e08f4f61305503877569a8f31a4f9d27462782"
 dependencies = [
  "ahash",
  "anyhow",
@@ -2696,7 +2696,7 @@ dependencies = [
 [[package]]
 name = "plonky2_field"
 version = "0.1.1"
-source = "git+https://github.com/mir-protocol/plonky2.git#f67ee258a172848a96fee20196a0151178a61ae6"
+source = "git+https://github.com/mir-protocol/plonky2.git#18e08f4f61305503877569a8f31a4f9d27462782"
 dependencies = [
  "anyhow",
  "itertools 0.11.0",
@@ -2720,7 +2720,7 @@ dependencies = [
 [[package]]
 name = "plonky2_maybe_rayon"
 version = "0.1.1"
-source = "git+https://github.com/mir-protocol/plonky2.git#f67ee258a172848a96fee20196a0151178a61ae6"
+source = "git+https://github.com/mir-protocol/plonky2.git#18e08f4f61305503877569a8f31a4f9d27462782"
 dependencies = [
  "rayon",
 ]
@@ -2728,12 +2728,12 @@ dependencies = [
 [[package]]
 name = "plonky2_util"
 version = "0.1.1"
-source = "git+https://github.com/mir-protocol/plonky2.git#f67ee258a172848a96fee20196a0151178a61ae6"
+source = "git+https://github.com/mir-protocol/plonky2.git#18e08f4f61305503877569a8f31a4f9d27462782"
 
 [[package]]
 name = "plonky2x"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/succinctx.git#f3bcbe734dbcfb5cf1d91bb107eca76e08860f94"
+source = "git+https://github.com/succinctlabs/succinctx.git?branch=chris/parent-proof#3872dcd1bfabafc89c9725a6a0dc286b1c02048d"
 dependencies = [
  "anyhow",
  "array-macro",
@@ -2775,7 +2775,7 @@ dependencies = [
 [[package]]
 name = "plonky2x-derive"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/succinctx.git#f3bcbe734dbcfb5cf1d91bb107eca76e08860f94"
+source = "git+https://github.com/succinctlabs/succinctx.git?branch=chris/parent-proof#3872dcd1bfabafc89c9725a6a0dc286b1c02048d"
 dependencies = [
  "proc-macro2",
  "quote",
