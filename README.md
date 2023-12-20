@@ -1,21 +1,14 @@
-# lido-oracle-demo
+# ZK Lido Oracle
 
-This repo implements a fully-working POC of correctly calculating the total Lido reserves, number of
-validators ever deposited, and number of exited validators in ZK across all ~2M validators
-for ~300k gas.
+A trustless oracle replacement to the [Lido Accounting Oracle](https://docs.lido.fi/contracts/accounting-oracle/), powered by ZK. In particular, we calculate the following statistics every 225 epochs:
+- [clBalancesGwei](https://github.com/lidofinance/lido-dao/blob/cadffa46a2b8ed6cfa1127fca2468bae1a82d6bf/contracts/0.8.9/oracle/AccountingOracle.sol#L212): cumulative balance of all Lido validators on the consensus lay
+- [numValidators](https://github.com/lidofinance/lido-dao/blob/cadffa46a2b8ed6cfa1127fca2468bae1a82d6bf/contracts/0.8.9/oracle/AccountingOracle.sol#L208): the number of Lido-participating validators on consensus layer that ever appeared (deposited + activated)
+- [numExitedValidators](https://github.com/lidofinance/lido-dao/blob/cadffa46a2b8ed6cfa1127fca2468bae1a82d6bf/contracts/0.8.9/oracle/AccountingOracle.sol#L222): the number of Lido-participating exited validators on the consensus layer that ever appeared
 
-It is built using [plonky2x](https://github.com/succinctlabs/succinctx) proving system and deployed
-with the [Succinct SDK](https://github.com/succinctlabs/succinctx).
+The circuit is built using the [plonky2x](https://github.com/succinctlabs/succinctx) proving system and system is deployed end-to-end
+with [Succinct](alpha.succinct.xyz). You can explore the generated proofs [here](https://alpha.succinct.xyz/succinctlabs/lido-oracle-demo).
 
-## Circuit Logic
-
-1. From the input beacon block root, prove the validator and balance tree roots.
-   - Note: we actually prove a subset of the full trees because most of the values are zero.
-2. In a mapreduce-like system:
-   1. Map the validators into batches of 512, and for each batch, calculate the total balances, validators, and exited validators. Additionally, compute the merkle hashes of this batch's balances and validators within the full validator tree.
-   2. Reduce the batch roots in pairs to form a single validator root and single balance root.
-3. Confirm that the resulting validator and balance root are correct.
-4. Output the result data.
+For more details, refer to the [original grant proposal](https://research.lido.fi/t/zk-lido-oracle-powered-by-succinct/5747) that was submitted to the Lido DAO.
 
 ## Installation
 
