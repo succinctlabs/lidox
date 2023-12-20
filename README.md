@@ -34,7 +34,11 @@ cd contracts
 bash script/request.sh
 ```
 
-## Goerli Demo
+## Holesky Deployment
+
+More details coming soon!
+
+## Goerli Deployment
 
 Contract Address: [0xfD8e3773181Ca832FE0283383277a108609E3E8b](https://goerli.etherscan.io/address/0xfd8e3773181ca832fe0283383277a108609e3e8b)
 
