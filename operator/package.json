@@ -1,0 +1,34 @@
+{
+  "name": "@succinctlabs/lido-operator",
+  "version": "1.0.0",
+  "packageManager": "yarn@3.3.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "dependencies": {
+    "@chainsafe/ssz": "^0.14.0",
+    "@lodestar/types": "^1.12.1",
+    "@succinctlabs/circomx": "^0.0.20",
+    "@types/node": "^20.4.6",
+    "@types/yargs": "^17.0.32",
+    "axios": "^1.6.2",
+    "dotenv": "^16.3.1",
+    "tsx": "^4.6.2",
+    "viem": "^1.19.13",
+    "yargs": "^17.7.2"
+  },
+  "engines": {
+    "node": "18.x"
+  },
+  "devDependencies": {
+    "typescript": "^5.1.6"
+  },
+  "scripts": {
+    "build": "yarn clean && tsc -b",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "cli": "node dist/index.js"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

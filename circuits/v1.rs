@@ -1,4 +1,4 @@
-//! A demo of how the Succinct SDK can be used to augment the security of the Lido Oralce.
+//! A demo of how the Succinct SDK can be used to augment the security of the Lido Oracle.
 //!
 //! This circuit calculates the following for a given `beaconBlockRoot` and `withdrawalCredentials`:
 //!
@@ -19,6 +19,9 @@ use itertools::Itertools;
 use plonky2::plonk::config::{AlgebraicHasher, GenericConfig};
 use plonky2x::backend::circuit::{Circuit, PlonkParameters};
 use plonky2x::backend::function::Plonky2xFunction;
+use plonky2x::frontend::eth::beacon::generators::{
+    BeaconPartialBalancesHint, BeaconPartialValidatorsHint,
+};
 use plonky2x::frontend::eth::beacon::vars::{BeaconBalancesVariable, BeaconValidatorsVariable};
 use plonky2x::frontend::mapreduce::generator::MapReduceGenerator;
 use plonky2x::frontend::uint::uint64::U64Variable;
@@ -29,7 +32,7 @@ use plonky2x::prelude::{Bytes32Variable, CircuitBuilder, HintRegistry};
 const SLOTS_PER_EPOCH: u64 = 32;
 
 /// The number of validators to fetch.
-const NB_VALIDATORS: usize = 2097152;
+const NB_VALIDATORS: usize = 262144;
 
 /// The batch size for fetching balances and computing the local balance roots.
 const BATCH_SIZE: usize = 512;
@@ -221,6 +224,10 @@ impl<const N: usize> Circuit for LidoOracleV1<N> {
             BATCH_SIZE,
             D,
         >>(id);
+        if N > usize::pow(2, 20) {
+            registry.register_hint::<BeaconPartialValidatorsHint<N>>();
+            registry.register_hint::<BeaconPartialBalancesHint<N>>();
+        }
     }
 }
 
