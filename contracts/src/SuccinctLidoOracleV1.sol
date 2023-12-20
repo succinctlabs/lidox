@@ -34,9 +34,9 @@ contract SuccinctLidoOracleV1 is LidoZKOracle {
     struct Report {
         bool requested;
         bool received;
-        uint256 clBalanceGwei;
-        uint256 numValidators;
-        uint256 exitedValidators;
+        uint64 clBalanceGwei;
+        uint32 numValidators;
+        uint32 exitedValidators;
     }
 
     mapping(uint256 => Report) public reports;
@@ -68,14 +68,11 @@ contract SuccinctLidoOracleV1 is LidoZKOracle {
     function handleUpdate(bytes memory output, bytes memory context) external {
         require(msg.sender == FUNCTION_GATEWAY && ISuccinctGateway(FUNCTION_GATEWAY).isCallback());
         (uint64 slot) = abi.decode(context, (uint64));
-        (uint64 clBalancesGweiU64, uint32 numValidatorsU32, uint32 numExitedValidatorsU32) =
+        (uint64 clBalancesGwei, uint32 numValidators, uint32 numExitedValidators) =
             _readData(output);
-        uint256 clBalancesGwei = uint256(clBalancesGweiU64);
-        uint256 numValidators = uint256(numValidatorsU32);
-        uint256 numExitedValidators = uint256(numExitedValidatorsU32);
 
         emit LidoOracleV1Update(slot, clBalancesGwei, numValidators, numExitedValidators);
-        reports[uint256(slot)] = Report({
+        reports[slot] = Report({
             requested: true,
             received: true,
             clBalanceGwei: clBalancesGwei,
