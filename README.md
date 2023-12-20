@@ -12,7 +12,7 @@ For more details, refer to the [original grant proposal](https://research.lido.f
 
 ## Installation
 
-To run the test locally:
+To run the test locally, set `CONSENSUS_RPC_URL` to a beacon chain node and run the following command:
 
 ```
 RUST_LOG=debug cargo test test_circuit --release -- --nocapture
