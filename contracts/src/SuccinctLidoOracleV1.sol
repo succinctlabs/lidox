@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.16;
 
-import "./interfaces/ISuccinctGateway.sol";
+import "succinctx/interfaces/ISuccinctGateway.sol";
 import "./interfaces/LidoZKOracle.sol";
 
 /// @title SuccinctLidoOracleV1
