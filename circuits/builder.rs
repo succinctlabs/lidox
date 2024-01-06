@@ -76,9 +76,8 @@ impl<L: PlonkParameters<D>, const D: usize> LidoBuilderMethods<L, D> for Circuit
         input_stream.write::<Bytes32Variable>(&withdrawal_credentials);
         let hint = BeaconValidatorSubtreePoseidonHint::<B, N> {};
         let output_stream = self.async_hint(input_stream, hint);
-        let num_batches = N / B;
         let mut subtrees = Vec::new();
-        for _i in 0..num_batches {
+        for _ in 0..B {
             let batch = output_stream.read::<(BoolVariable, U256Variable)>(self);
             subtrees.push(batch);
         }
@@ -157,7 +156,7 @@ impl<L: PlonkParameters<D>, const D: usize, const B: usize, const N: usize> Asyn
         let response = client
             .get_validator_subtree(B, N, hex!(block_root))
             .await
-            .expect("failed to get validators root");
+            .expect("failed to get validators subtree");
 
         let validators = response.iter().collect::<Vec<_>>();
         let records = validators
@@ -169,7 +168,7 @@ impl<L: PlonkParameters<D>, const D: usize, const B: usize, const N: usize> Asyn
                 )
             })
             .collect::<Vec<_>>();
-        for i in 0..N / B {
+        for i in 0..B {
             output_stream.write_value::<(BoolVariable, U256Variable)>(records[i]);
         }
     }
