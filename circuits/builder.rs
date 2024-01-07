@@ -6,6 +6,7 @@ use plonky2x::backend::circuit::PlonkParameters;
 use plonky2x::frontend::builder::CircuitBuilder;
 use plonky2x::frontend::eth::beacon::vars::BeaconValidatorVariable;
 use plonky2x::frontend::hint::asynchronous::hint::AsyncHint;
+use plonky2x::frontend::uint::uint64::U64Variable;
 use plonky2x::frontend::vars::{
     BoolVariable, Bytes32Variable, U256Variable, ValueStream, VariableStream,
 };
@@ -24,10 +25,11 @@ pub trait LidoBuilderMethods<L: PlonkParameters<D>, const D: usize> {
         subtree_hash: Bytes32Variable,
     ) -> Vec<BeaconValidatorVariable>;
 
-    fn beacon_witness_validator_subtree_poseidon<const B: usize, const N: usize>(
+    fn beacon_witness_validator_subtree_poseidon<const B: usize>(
         &mut self,
         block_root: Bytes32Variable,
         withdrawal_credentials: Bytes32Variable,
+        start_index: U64Variable,
     ) -> Vec<(BoolVariable, U256Variable)>;
 }
 
@@ -57,24 +59,25 @@ impl<L: PlonkParameters<D>, const D: usize> LidoBuilderMethods<L, D> for Circuit
         input_stream.write::<Bytes32Variable>(&subtree_hash);
         let hint = BeaconValidatorSubtreeHint::<B, N> {};
         let output_stream = self.async_hint(input_stream, hint);
-        let num_batches = N / B;
         let mut subtrees = Vec::new();
-        for _i in 0..num_batches {
+        for _i in 0..B {
             let batch = output_stream.read::<BeaconValidatorVariable>(self);
             subtrees.push(batch);
         }
         subtrees
     }
 
-    fn beacon_witness_validator_subtree_poseidon<const B: usize, const N: usize>(
+    fn beacon_witness_validator_subtree_poseidon<const B: usize>(
         &mut self,
         block_root: Bytes32Variable,
         withdrawal_credentials: Bytes32Variable,
+        start_index: U64Variable,
     ) -> Vec<(BoolVariable, U256Variable)> {
         let mut input_stream = VariableStream::new();
         input_stream.write::<Bytes32Variable>(&block_root);
         input_stream.write::<Bytes32Variable>(&withdrawal_credentials);
-        let hint = BeaconValidatorSubtreePoseidonHint::<B, N> {};
+        input_stream.write::<U64Variable>(&start_index);
+        let hint = BeaconValidatorSubtreePoseidonHint::<B> {};
         let output_stream = self.async_hint(input_stream, hint);
         let mut subtrees = Vec::new();
         for _ in 0..B {
@@ -131,18 +134,18 @@ impl<L: PlonkParameters<D>, const D: usize, const B: usize, const N: usize> Asyn
             .await
             .expect("failed to get validators root");
 
-        for i in 0..N / B {
+        for i in 0..B {
             output_stream.write_value::<BeaconValidatorVariable>(response[i].clone());
         }
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BeaconValidatorSubtreePoseidonHint<const B: usize, const N: usize> {}
+pub struct BeaconValidatorSubtreePoseidonHint<const B: usize> {}
 
 #[async_trait]
-impl<L: PlonkParameters<D>, const D: usize, const B: usize, const N: usize> AsyncHint<L, D>
-    for BeaconValidatorSubtreePoseidonHint<B, N>
+impl<L: PlonkParameters<D>, const D: usize, const B: usize> AsyncHint<L, D>
+    for BeaconValidatorSubtreePoseidonHint<B>
 {
     async fn hint(
         &self,
@@ -152,10 +155,10 @@ impl<L: PlonkParameters<D>, const D: usize, const B: usize, const N: usize> Asyn
         let client = BeaconClient::new(env::var("CONSENSUS_RPC_URL").unwrap());
         let block_root = input_stream.read_value::<Bytes32Variable>();
         let withdrawal_credentials = input_stream.read_value::<Bytes32Variable>();
+        let start_index = input_stream.read_value::<U64Variable>();
 
         let response = client
-            .get_validator_subtree(B, N, hex!(block_root))
-            .await
+            .get_validator_batch_witness(hex!(block_root), start_index, start_index + B as u64)
             .expect("failed to get validators subtree");
 
         let validators = response.iter().collect::<Vec<_>>();
