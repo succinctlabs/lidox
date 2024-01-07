@@ -2735,6 +2735,7 @@ source = "git+https://github.com/mir-protocol/plonky2.git#f46cf4ef680ddfd4941691
 [[package]]
 name = "plonky2x"
 version = "0.1.0"
+source = "git+https://github.com/succinctlabs/succinctx.git?branch=chris/lido-cache#a32fa28422feb8ee6593b8761d1fc628d2e8aad6"
 dependencies = [
  "anyhow",
  "array-macro",
@@ -2776,6 +2777,7 @@ dependencies = [
 [[package]]
 name = "plonky2x-derive"
 version = "0.1.0"
+source = "git+https://github.com/succinctlabs/succinctx.git?branch=chris/lido-cache#a32fa28422feb8ee6593b8761d1fc628d2e8aad6"
 dependencies = [
  "proc-macro2",
  "quote",
