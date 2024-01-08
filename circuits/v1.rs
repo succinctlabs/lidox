@@ -43,13 +43,16 @@ const SLOTS_PER_EPOCH: u64 = 32;
 /// The number of validators to fetch.
 const NB_VALIDATORS: usize = 8192;
 
-/// The batch size for fetching balances and computing the local balance roots.
-const BATCH_SIZE: usize = 512;
+/// The batch size for building the validator tree and computing numValidators.
+const VALIDATOR_BATCH_SIZE: usize = 512;
+
+/// The batch size for building the balance tree and computing clBalancesGwei and numExitedValidators.
+const BALANCE_BATCH_SIZE: usize = 8192;
 
 #[derive(Debug, Clone)]
-struct LidoOracleV1<const B: usize, const N: usize>;
+struct LidoOracleV1<const V: usize, const B: usize, const N: usize>;
 
-impl<const B: usize, const N: usize> Circuit for LidoOracleV1<B, N> {
+impl<const V: usize, const B: usize, const N: usize> Circuit for LidoOracleV1<V, B, N> {
     fn define<L: PlonkParameters<D>, const D: usize>(builder: &mut CircuitBuilder<L, D>)
     where
         <<L as PlonkParameters<D>>::Config as GenericConfig<D>>::Hasher:
@@ -68,7 +71,7 @@ impl<const B: usize, const N: usize> Circuit for LidoOracleV1<B, N> {
         // Get the validators and balances root.
         let validators = builder.beacon_get_partial_validators::<N>(block_root);
         let balances = builder.beacon_get_partial_balances::<N>(block_root);
-        let subtrees = builder.beacon_witness_validator_subtrees::<B, N>(block_root);
+        let subtrees = builder.beacon_witness_validator_subtrees::<V, N>(block_root);
 
         debug!("starting 1");
         let validator_output = builder.mapreduce_dynamic::<Bytes32Variable, Bytes32Variable, (
@@ -85,7 +88,7 @@ impl<const B: usize, const N: usize> Circuit for LidoOracleV1<B, N> {
                 // Witness validators.
                 builder.watch(&hashes[0], "hashes[0]");
                 let subtree_hash = hashes[0];
-                let validators = builder.beacon_witness_validator_subtree::<B, N>(subtree_hash);
+                let validators = builder.beacon_witness_validator_subtree::<V, N>(subtree_hash);
                 // Compute the SSZ leaf representation of the validators.
                 // Compute whether the validator matches the provided withdrawal credentials and
                 // satisfies validator.activation_epoch <= epoch < validator.exit_epoch.
@@ -306,14 +309,14 @@ impl<const B: usize, const N: usize> Circuit for LidoOracleV1<B, N> {
             registry.register_async_hint::<BeaconPartialValidatorsHint<N>>();
             registry.register_async_hint::<BeaconPartialBalancesHint<N>>();
         }
-        registry.register_async_hint::<BeaconValidatorSubtreeHint<B, N>>();
-        registry.register_async_hint::<BeaconValidatorSubtreesHint<B, N>>();
+        registry.register_async_hint::<BeaconValidatorSubtreeHint<V, N>>();
+        registry.register_async_hint::<BeaconValidatorSubtreesHint<V, N>>();
         registry.register_async_hint::<BeaconValidatorSubtreePoseidonHint<B>>();
     }
 }
 
 fn main() {
-    LidoOracleV1::<BATCH_SIZE, NB_VALIDATORS>::entrypoint();
+    LidoOracleV1::<VALIDATOR_BATCH_SIZE, BALANCE_BATCH_SIZE, NB_VALIDATORS>::entrypoint();
 }
 
 #[cfg(test)]
@@ -334,6 +337,7 @@ mod tests {
     const WITHDRAWAL_CREDENTIALS: &str =
         "0x010000000000000000000000f4d1645dd1a8a44a3dd197cba2626161b01163c5";
 
+    const TEST_V: usize = 2;
     const TEST_B: usize = 4;
     const TEST_NB_VALIDATORS: usize = 16;
 
@@ -351,7 +355,7 @@ mod tests {
         debug!("TEST_B: {}", TEST_B);
         debug!("TEST_NB_VALIDATORS: {}", TEST_NB_VALIDATORS);
         let mut builder = CircuitBuilder::<L, D>::new();
-        LidoOracleV1::<TEST_B, TEST_NB_VALIDATORS>::define(&mut builder);
+        LidoOracleV1::<TEST_V, TEST_B, TEST_NB_VALIDATORS>::define(&mut builder);
         let circuit = builder.build();
 
         // Generate input.
@@ -378,6 +382,6 @@ mod tests {
         // assert_eq!(num_exited_validators, 0);
 
         // Test circuit serialization.
-        LidoOracleV1::<TEST_B, TEST_NB_VALIDATORS>::test_serialization::<L, D>();
+        LidoOracleV1::<TEST_V, TEST_B, TEST_NB_VALIDATORS>::test_serialization::<L, D>();
     }
 }
