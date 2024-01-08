@@ -16,7 +16,6 @@
 #![allow(clippy::needless_range_loop)]
 #![feature(async_fn_in_trait)]
 
-use log::debug;
 use plonky2::plonk::config::{AlgebraicHasher, GenericConfig};
 use plonky2x::backend::circuit::{Circuit, PlonkParameters};
 use plonky2x::backend::function::Plonky2xFunction;
