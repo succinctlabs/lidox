@@ -2674,7 +2674,7 @@ checksum = "14e6ab3f592e6fb464fc9712d8d6e6912de6473954635fd76a589d832cffcbb0"
 [[package]]
 name = "plonky2"
 version = "0.1.4"
-source = "git+https://github.com/mir-protocol/plonky2.git#f46cf4ef680ddfd4941691a7d37e5a2568a89cf7"
+source = "git+https://github.com/mir-protocol/plonky2.git#cb19f2199443d9a22c6ab31f685bd0419d41ab2b"
 dependencies = [
  "ahash",
  "anyhow",
@@ -2698,7 +2698,7 @@ dependencies = [
 [[package]]
 name = "plonky2_field"
 version = "0.1.1"
-source = "git+https://github.com/mir-protocol/plonky2.git#f46cf4ef680ddfd4941691a7d37e5a2568a89cf7"
+source = "git+https://github.com/mir-protocol/plonky2.git#cb19f2199443d9a22c6ab31f685bd0419d41ab2b"
 dependencies = [
  "anyhow",
  "itertools 0.11.0",
@@ -2722,7 +2722,7 @@ dependencies = [
 [[package]]
 name = "plonky2_maybe_rayon"
 version = "0.1.1"
-source = "git+https://github.com/mir-protocol/plonky2.git#f46cf4ef680ddfd4941691a7d37e5a2568a89cf7"
+source = "git+https://github.com/mir-protocol/plonky2.git#cb19f2199443d9a22c6ab31f685bd0419d41ab2b"
 dependencies = [
  "rayon",
 ]
@@ -2730,12 +2730,12 @@ dependencies = [
 [[package]]
 name = "plonky2_util"
 version = "0.1.1"
-source = "git+https://github.com/mir-protocol/plonky2.git#f46cf4ef680ddfd4941691a7d37e5a2568a89cf7"
+source = "git+https://github.com/mir-protocol/plonky2.git#cb19f2199443d9a22c6ab31f685bd0419d41ab2b"
 
 [[package]]
 name = "plonky2x"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/succinctx.git?branch=chris/lido-cache#a32fa28422feb8ee6593b8761d1fc628d2e8aad6"
+source = "git+https://github.com/succinctlabs/succinctx.git?branch=chris/lido-cache#0872c6e128565f63e2f287b5db9aa1bab3ebc5f7"
 dependencies = [
  "anyhow",
  "array-macro",
@@ -2777,7 +2777,7 @@ dependencies = [
 [[package]]
 name = "plonky2x-derive"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/succinctx.git?branch=chris/lido-cache#a32fa28422feb8ee6593b8761d1fc628d2e8aad6"
+source = "git+https://github.com/succinctlabs/succinctx.git?branch=chris/lido-cache#0872c6e128565f63e2f287b5db9aa1bab3ebc5f7"
 dependencies = [
  "proc-macro2",
  "quote",
