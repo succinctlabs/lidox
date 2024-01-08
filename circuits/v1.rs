@@ -40,14 +40,14 @@ use builder::{
 /// The number of slots per epoch in the consensus layer.
 const SLOTS_PER_EPOCH: u64 = 32;
 
-/// The number of validators to fetch.
-const NB_VALIDATORS: usize = 8192;
-
 /// The batch size for building the validator tree and computing numValidators.
 const VALIDATOR_BATCH_SIZE: usize = 512;
 
 /// The batch size for building the balance tree and computing clBalancesGwei and numExitedValidators.
-const BALANCE_BATCH_SIZE: usize = 8192;
+const BALANCE_BATCH_SIZE: usize = 16384;
+
+/// The number of validators to fetch.
+const NB_VALIDATORS: usize = 32768;
 
 #[derive(Debug, Clone)]
 struct LidoOracleV1<const V: usize, const B: usize, const N: usize>;
