@@ -123,20 +123,26 @@ impl<const V: usize, const B: usize, const N: usize> Circuit for LidoOracleV1<V,
                 builder.watch(&subtree_hash, "subtree_hash");
                 builder.assert_is_equal(computed_subtree_hash, subtree_hash);
 
-                let mut poseidons = acc_leaves
-                    .iter()
-                    .map(|v| builder.poseidon_hash(&v.variables()))
-                    .collect::<Vec<_>>();
-                while poseidons.len() > 1 {
-                    let mut new_poseidons = Vec::new();
-                    for i in 0..poseidons.len() / 2 {
-                        let (left, right) =
-                            (poseidons[i * 2].clone(), poseidons[i * 2 + 1].clone());
-                        new_poseidons.push(builder.poseidon_hash_pair(left, right));
-                    }
-                    poseidons = new_poseidons;
-                }
-                (poseidons[0].clone(), subtree_hash, num_validators)
+                let poseidon_hash = builder.poseidon_hash(
+                    &acc_leaves
+                        .iter()
+                        .flat_map(|v| v.0.variables())
+                        .collect::<Vec<_>>(),
+                );
+                // let mut poseidons = acc_leaves
+                //     .iter()
+                //     .map(|v| builder.poseidon_hash(&v.variables()))
+                //     .collect::<Vec<_>>();
+                // while poseidons.len() > 1 {
+                //     let mut new_poseidons = Vec::new();
+                //     for i in 0..poseidons.len() / 2 {
+                //         let (left, right) =
+                //             (poseidons[i * 2].clone(), poseidons[i * 2 + 1].clone());
+                //         new_poseidons.push(builder.poseidon_hash_pair(left, right));
+                //     }
+                //     poseidons = new_poseidons;
+                // }
+                (poseidon_hash.clone(), subtree_hash, num_validators)
             },
             |_, left, right, builder| {
                 builder.watch(&left.1, "left.0");
@@ -204,10 +210,20 @@ impl<const V: usize, const B: usize, const N: usize> Circuit for LidoOracleV1<V,
                     }
                     debug!("c");
 
+                    // Hash in batches of B.
                     let mut poseidons = poseidon_leaves
-                        .iter()
-                        .map(|v| builder.poseidon_hash(&v.variables()))
+                        .chunks(B)
+                        .map(|b| {
+                            builder.poseidon_hash(
+                                &b.iter().flat_map(|v| v.variables()).collect::<Vec<_>>(),
+                            )
+                        })
                         .collect::<Vec<_>>();
+                    // let mut poseidons =
+                    // let mut poseidons = poseidon_leaves
+                    //     .iter()
+                    //     .map(|v| builder.poseidon_hash(&v.variables()))
+                    //     .collect::<Vec<_>>();
                     while poseidons.len() > 1 {
                         let mut new_poseidons = Vec::new();
                         for i in 0..poseidons.len() / 2 {
