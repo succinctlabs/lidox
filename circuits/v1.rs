@@ -44,10 +44,10 @@ const SLOTS_PER_EPOCH: u64 = 32;
 const VALIDATOR_BATCH_SIZE: usize = 512;
 
 /// The batch size for building the balance tree and computing clBalancesGwei and numExitedValidators.
-const BALANCE_BATCH_SIZE: usize = 16384;
+const BALANCE_BATCH_SIZE: usize = 8192;
 
 /// The number of validators to fetch.
-const NB_VALIDATORS: usize = 32768;
+const NB_VALIDATORS: usize = 16384;
 
 #[derive(Debug, Clone)]
 struct LidoOracleV1<const V: usize, const B: usize, const N: usize>;
@@ -126,7 +126,7 @@ impl<const V: usize, const B: usize, const N: usize> Circuit for LidoOracleV1<V,
                 let poseidon_hash = builder.poseidon_hash(
                     &acc_leaves
                         .iter()
-                        .flat_map(|v| v.0.variables())
+                        .flat_map(|v| v.variables())
                         .collect::<Vec<_>>(),
                 );
                 // let mut poseidons = acc_leaves
