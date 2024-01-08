@@ -68,28 +68,28 @@ impl<const V: usize, const B: usize, const N: usize> Circuit for LidoOracleV1<V,
         let slots_per_epoch = builder.constant::<U64Variable>(SLOTS_PER_EPOCH);
         let epoch = builder.div(slot, slots_per_epoch).to_u256(builder);
 
-        // Get the validators and balances root.
+        // Get the validator and balance roots, and the validator subtree hashes.
         let validators = builder.beacon_get_partial_validators::<N>(block_root);
         let balances = builder.beacon_get_partial_balances::<N>(block_root);
         let subtrees = builder.beacon_witness_validator_subtrees::<V, N>(block_root);
 
+        // Process all the validators in batches of V.
+        // Note that the context does not include slot/epoch information so subproofs can be cached.
         let validator_output = builder.mapreduce_dynamic::<Bytes32Variable, Bytes32Variable, (
             PoseidonHashOutVariable,
             Bytes32Variable,
             U32Variable,
-            //     poseidon_acc,
-            //     validators_root,
-            //     num_validators,
         ), Self, 1, _, _>(
             withdrawal_credentials,
             subtrees,
             |withdrawal_credentials, hashes, builder| {
-                // Witness validators.
+                // Witness this batch of validators.
                 let subtree_hash = hashes[0];
                 let validators = builder.beacon_witness_validator_subtree::<V, N>(subtree_hash);
+
                 // Compute the SSZ leaf representation of the validators.
                 // Compute whether the validator matches the provided withdrawal credentials and
-                // satisfies validator.activation_epoch <= epoch < validator.exit_epoch.
+                // update num_validators accordingly.
                 let mut validator_leafs = Vec::new();
                 let one = builder.one::<U32Variable>();
                 let mut num_validators = builder.zero::<U32Variable>();
@@ -101,7 +101,6 @@ impl<const V: usize, const B: usize, const N: usize> Circuit for LidoOracleV1<V,
                     // Compute validator.withdrawal_credentials == withdrawal_credentials.
                     let withdrawal_credentials_match = builder
                         .is_equal(validators[i].withdrawal_credentials, withdrawal_credentials);
-                    acc_leaves.push((withdrawal_credentials_match, validators[i].exit_epoch));
 
                     // Add to the total validator count.
                     let num_validators_plus_one = builder.add(num_validators, one);
@@ -110,18 +109,23 @@ impl<const V: usize, const B: usize, const N: usize> Circuit for LidoOracleV1<V,
                         num_validators_plus_one,
                         num_validators,
                     );
+
+                    // Because we don't have epoch/balances here (to allow for proof caching),
+                    // accumulate this info into a tree that we can verify in the balances step.
+                    acc_leaves.push((withdrawal_credentials_match, validators[i].exit_epoch));
                 }
 
+                // Reduce validator leafs to a single root.
                 let computed_subtree_hash = builder.ssz_hash_leafs(&validator_leafs);
-                builder.assert_is_equal(computed_subtree_hash, subtree_hash);
 
+                // Reduce accumulated leaves to a single root.
                 let poseidon_hash = builder.poseidon_hash(
                     &acc_leaves
                         .iter()
                         .flat_map(|v| v.variables())
                         .collect::<Vec<_>>(),
                 );
-                (poseidon_hash.clone(), subtree_hash, num_validators)
+                (poseidon_hash.clone(), computed_subtree_hash, num_validators)
             },
             |_, left, right, builder| {
                 (
@@ -132,9 +136,7 @@ impl<const V: usize, const B: usize, const N: usize> Circuit for LidoOracleV1<V,
             },
         );
 
-        // balances, epoch, withdrawal_credentials
-        // indexes
-        // poseidon_acc, balance_root, cl_balances_gwei, num_exited_validators
+        // Process all the balances in batches of B.
         let idxs = (0..N).map(|i| i as u64).step_by(B).collect::<Vec<_>>();
         let balance_output = builder
             .mapreduce::<(BeaconBalancesVariable, U256Variable, Bytes32Variable), U64Variable, (
@@ -149,13 +151,14 @@ impl<const V: usize, const B: usize, const N: usize> Circuit for LidoOracleV1<V,
                     // Witness balances.
                     let balances_witness =
                         builder.beacon_witness_balance_batch::<B>(balances, idxs[0]);
-                    let poseidon_leaves = builder.beacon_witness_validator_subtree_poseidon::<B>(
+                    // Witness the data we committed to (as a poseidon tree) in the validator step.
+                    let poseidon_leafs = builder.beacon_witness_validator_subtree_poseidon::<B>(
                         balances.block_root,
                         withdrawal_credentials,
                         idxs[0],
                     );
 
-                    // Convert balances to leafs.
+                    // Pack balances into leafs.
                     let mut balance_leafs = Vec::new();
                     let zero = builder.zero::<U64Variable>();
                     let mut cl_balances_gwei = builder.zero::<U64Variable>();
@@ -167,19 +170,19 @@ impl<const V: usize, const B: usize, const N: usize> Circuit for LidoOracleV1<V,
                             balances_witness[i * 4 + 3],
                         ];
                         let masked_balances = [
-                            builder.select(poseidon_leaves[i * 4].0, four_balances[0], zero),
-                            builder.select(poseidon_leaves[i * 4 + 1].0, four_balances[1], zero),
-                            builder.select(poseidon_leaves[i * 4 + 2].0, four_balances[2], zero),
-                            builder.select(poseidon_leaves[i * 4 + 3].0, four_balances[3], zero),
+                            builder.select(poseidon_leafs[i * 4].0, four_balances[0], zero),
+                            builder.select(poseidon_leafs[i * 4 + 1].0, four_balances[1], zero),
+                            builder.select(poseidon_leafs[i * 4 + 2].0, four_balances[2], zero),
+                            builder.select(poseidon_leafs[i * 4 + 3].0, four_balances[3], zero),
                         ];
                         let cl_balances_gwei_term = builder.add_many(&masked_balances);
                         cl_balances_gwei = builder.add(cl_balances_gwei, cl_balances_gwei_term);
                         balance_leafs.push(builder.beacon_u64s_to_leaf(four_balances));
                     }
 
-                    // Hash in batches of B.
-                    let mut poseidons = poseidon_leaves
-                        .chunks(B)
+                    // Hash leafs in batches of V, then reduce into a single root. (since B>V)
+                    let mut poseidons = poseidon_leafs
+                        .chunks(V)
                         .map(|b| {
                             builder.poseidon_hash(
                                 &b.iter().flat_map(|v| v.variables()).collect::<Vec<_>>(),
@@ -201,8 +204,8 @@ impl<const V: usize, const B: usize, const N: usize> Circuit for LidoOracleV1<V,
 
                     let one = builder.one::<U32Variable>();
                     let mut num_exited_validators = builder.zero::<U32Variable>();
-                    for i in 0..poseidon_leaves.len() {
-                        let (withdrawal_credentials_match, exit_epoch) = poseidon_leaves[i];
+                    for i in 0..poseidon_leafs.len() {
+                        let (withdrawal_credentials_match, exit_epoch) = poseidon_leafs[i];
                         let is_exited_validator = builder.gte(epoch, exit_epoch);
                         let is_exited_validator =
                             builder.and(withdrawal_credentials_match, is_exited_validator);
@@ -233,8 +236,9 @@ impl<const V: usize, const B: usize, const N: usize> Circuit for LidoOracleV1<V,
                 },
             );
 
-        // Assert that the reconstructed commitments match to what we proved exists in the block.
+        // Assert that the poseidon tree roots match from validator and balance steps.
         builder.assert_is_equal(validator_output.0, balance_output.0);
+        // Assert that the reconstructed commitments match to what we proved exists in the block.
         builder.assert_is_equal(validator_output.1, validators.validators_root);
         builder.assert_is_equal(balance_output.1, balances.root);
 
