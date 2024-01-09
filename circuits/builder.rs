@@ -106,7 +106,7 @@ impl<L: PlonkParameters<D>, const D: usize, const B: usize, const N: usize> Asyn
         let response = client
             .get_validator_subtrees(B, N, hex!(block_root))
             .await
-            .expect("failed to get validators root");
+            .expect("failed to get validator subtrees");
 
         for i in 0..N / B {
             output_stream.write_value::<Bytes32Variable>(bytes32!(response[i]));
