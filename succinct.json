@@ -4,7 +4,7 @@
             "name": "v1",
             "framework": "plonky2",
             "baseDir": ".",
-            "buildCommand": "cargo build --release && mv ./target/release/v1 ./build/v1",
+            "buildCommand": "cargo run --release --bin v1 build && mv ./target/release/v1 ./build/v1",
             "proveCommand": "RUST_LOG=debug ./build/v1 prove input.json",
             "requiredArtifacts": [
                 "v1"
