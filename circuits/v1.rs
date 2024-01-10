@@ -20,7 +20,8 @@ use plonky2::plonk::config::{AlgebraicHasher, GenericConfig};
 use plonky2x::backend::circuit::{Circuit, PlonkParameters};
 use plonky2x::backend::function::Plonky2xFunction;
 use plonky2x::frontend::eth::beacon::generators::{
-    BeaconPartialBalancesHint, BeaconPartialValidatorsHint,
+    BeaconPartialBalancesHint, BeaconPartialValidatorsHint, BeaconValidatorSubtreeHint,
+    BeaconValidatorSubtreePoseidonHint, BeaconValidatorSubtreesHint,
 };
 use plonky2x::frontend::eth::beacon::vars::BeaconBalancesVariable;
 use plonky2x::frontend::hash::poseidon::poseidon256::PoseidonHashOutVariable;
@@ -28,13 +29,6 @@ use plonky2x::frontend::mapreduce::generator::{MapReduceDynamicGenerator, MapRed
 use plonky2x::frontend::uint::uint64::U64Variable;
 use plonky2x::frontend::vars::{CircuitVariable, SSZVariable, U256Variable, U32Variable};
 use plonky2x::prelude::{Bytes32Variable, CircuitBuilder, HintRegistry};
-
-mod builder;
-
-use builder::{
-    BeaconValidatorSubtreeHint, BeaconValidatorSubtreePoseidonHint, BeaconValidatorSubtreesHint,
-    LidoBuilderMethods,
-};
 
 /// The number of slots per epoch in the consensus layer.
 const SLOTS_PER_EPOCH: u64 = 32;
@@ -308,9 +302,9 @@ mod tests {
     const WITHDRAWAL_CREDENTIALS: &str =
         "0x010000000000000000000000f4d1645dd1a8a44a3dd197cba2626161b01163c5";
 
-    const TEST_V: usize = 2;
-    const TEST_B: usize = 4;
-    const TEST_NB_VALIDATORS: usize = 16;
+    const TEST_V: usize = 512;
+    const TEST_B: usize = 1024;
+    const TEST_NB_VALIDATORS: usize = 2048;
 
     /// A test of the circuit on slot 7959300.
     ///
@@ -323,6 +317,7 @@ mod tests {
         dotenv::dotenv().ok();
 
         // Build the circuit.
+        debug!("TEST_V: {}", TEST_V);
         debug!("TEST_B: {}", TEST_B);
         debug!("TEST_NB_VALIDATORS: {}", TEST_NB_VALIDATORS);
         let mut builder = CircuitBuilder::<L, D>::new();
@@ -348,9 +343,9 @@ mod tests {
         debug!("> numExitedValidators: {}", num_exited_validators);
 
         // Assert output.
-        // assert_eq!(cl_balances_gwei, 12804421770945);
-        // assert_eq!(num_validators, 400);
-        // assert_eq!(num_exited_validators, 0);
+        assert_eq!(cl_balances_gwei, 14533313413475);
+        assert_eq!(num_validators, 454);
+        assert_eq!(num_exited_validators, 0);
 
         // Test circuit serialization.
         LidoOracleV1::<TEST_V, TEST_B, TEST_NB_VALIDATORS>::test_serialization::<L, D>();
