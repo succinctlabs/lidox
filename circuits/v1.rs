@@ -40,7 +40,7 @@ const VALIDATOR_BATCH_SIZE: usize = 512;
 const BALANCE_BATCH_SIZE: usize = 8192;
 
 /// The number of validators to fetch.
-const NB_VALIDATORS: usize = 2097152;
+const NB_VALIDATORS: usize = 16384;
 
 #[derive(Debug, Clone)]
 struct LidoOracleV1<const V: usize, const B: usize, const N: usize>;
