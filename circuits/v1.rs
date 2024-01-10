@@ -298,7 +298,7 @@ mod tests {
     /// An example source block root (mainnet slot 7959300).
     const BLOCK_ROOT: &str = "0x46da8a07811bd86a9430d8d188afc39e19e84414df6c82ac99a31a94d556d5f4";
 
-    /// Test withdrawal credentials, used by 400 of the first 1024 mainnet validators.
+    /// Test withdrawal credentials, used by 454 of the first 2048 mainnet validators.
     const WITHDRAWAL_CREDENTIALS: &str =
         "0x010000000000000000000000f4d1645dd1a8a44a3dd197cba2626161b01163c5";
 
