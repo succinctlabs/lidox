@@ -37,10 +37,10 @@ const SLOTS_PER_EPOCH: u64 = 32;
 const VALIDATOR_BATCH_SIZE: usize = 512;
 
 /// The batch size for building the balance tree and computing clBalancesGwei and numExitedValidators.
-const BALANCE_BATCH_SIZE: usize = 8192;
+const BALANCE_BATCH_SIZE: usize = 4096;
 
 /// The number of validators to fetch.
-const NB_VALIDATORS: usize = 16384;
+const NB_VALIDATORS: usize = 2097152;
 
 #[derive(Debug, Clone)]
 struct LidoOracleV1<const V: usize, const B: usize, const N: usize>;
@@ -300,7 +300,7 @@ mod tests {
 
     /// Test withdrawal credentials, used by 454 of the first 2048 mainnet validators.
     const WITHDRAWAL_CREDENTIALS: &str =
-        "0x010000000000000000000000f4d1645dd1a8a44a3dd197cba2626161b01163c5";
+        "0x010000000000000000000000ae6e23880345eb52aa887bc625cf358f244a3fc4";
 
     const TEST_V: usize = 512;
     const TEST_B: usize = 1024;
