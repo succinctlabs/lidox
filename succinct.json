@@ -8,6 +8,9 @@
             "proveCommand": "RUST_LOG=debug ./build/v1 prove input.json",
             "requiredArtifacts": [
                 "v1"
+            ],
+            "defaultArtifacts": [
+                "main.circuit"
             ]
         }
     ]
