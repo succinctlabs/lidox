@@ -42,6 +42,7 @@ To run the operator:
 ```
 cd operator
 cp .env.example .env
+yarn install
 yarn build && yarn cli run <config-name>
 ```
 
@@ -51,9 +52,9 @@ Config is located at `operator/src/config.ts`
 
 More details coming soon!
 
-## Goerli Deployment
+## Sepolia Deployment
 
-Contract Address: [0xfD8e3773181Ca832FE0283383277a108609E3E8b](https://goerli.etherscan.io/address/0xfd8e3773181ca832fe0283383277a108609e3e8b)
+Contract Address: [0x36B2EC6419e085cFE06CBF2C70C56dF05F090686](https://sepolia.etherscan.io/address/0x36B2EC6419e085cFE06CBF2C70C56dF05F090686)
 
 Fulfill Transaction: [0xf0858e2180170a3b9b7fe31f09648e2d4544590be3eaca0ca8e14c1c00d1b341](https://goerli.etherscan.io/tx/0xf0858e2180170a3b9b7fe31f09648e2d4544590be3eaca0ca8e14c1c00d1b341)
 

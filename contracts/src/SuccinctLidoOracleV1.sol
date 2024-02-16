@@ -7,30 +7,6 @@ import "./interfaces/LidoZKOracle.sol";
 /// @title SuccinctLidoOracleV1
 /// @notice A demo of how the Succinct SDK can be used to augment the security of the Lido Oracle.
 contract SuccinctLidoOracleV1 is LidoZKOracle {
-    /// @notice The address of the function gateway.
-    address public immutable FUNCTION_GATEWAY;
-
-    /// @notice The function id of the consensus oracle.
-    bytes32 public immutable FUNCTION_ID;
-
-    /// @notice The withdrawal credential of all Lido validators.
-    bytes32 public immutable LIDO_WITHDRAWAL_CREDENTIAL;
-
-    /// @notice The address of the requester.
-    address public immutable REQUESTER;
-
-    constructor(
-        address _functionGateway,
-        bytes32 _functionId,
-        bytes32 _lidoWithdrawalCredential,
-        address _requester
-    ) {
-        FUNCTION_GATEWAY = _functionGateway;
-        FUNCTION_ID = _functionId;
-        LIDO_WITHDRAWAL_CREDENTIAL = _lidoWithdrawalCredential;
-        REQUESTER = _requester;
-    }
-
     struct Report {
         bool requested;
         bool received;
@@ -39,40 +15,116 @@ contract SuccinctLidoOracleV1 is LidoZKOracle {
         uint32 exitedValidators;
     }
 
-    mapping(uint256 => Report) public reports;
+    /// @dev The event emitted when a request is made.
+    event LidoOracleV1Request(uint64 refSlot, uint64 availableSlot, bytes32 availableBlockRoot);
 
     /// @dev The event emitted when a callback is received.
     event LidoOracleV1Update(
-        uint64 slot, uint256 clBalancesGwei, uint256 numValidators, uint256 numExitedValidators
+        uint64 refSlot, uint256 clBalancesGwei, uint256 numValidators, uint256 numExitedValidators
     );
 
+    /// @notice The address of the beacon roots precompile.
+    /// @dev https://eips.ethereum.org/EIPS/eip-4788
+    address internal constant BEACON_ROOTS = 0x000F3df6D732807Ef1319fB7B8bB8522d0Beac02;
+
+    /// @notice The maximum number of slots to search through.
+    /// @dev This is 1 day worth of slots.
+    uint256 internal constant MAX_SLOT_ATTEMPTS = 7200;
+
+    /// @notice The address of the Succinct gateway.
+    address public immutable SUCCINCT_GATEWAY;
+
+    /// @notice The function id of the consensus oracle.
+    bytes32 public immutable FUNCTION_ID;
+
+    /// @notice The withdrawal credential of all Lido validators.
+    bytes32 public immutable LIDO_WITHDRAWAL_CREDENTIAL;
+
+    /// @notice The mapping of requesters. Address -> IsRequester.
+    mapping(address => bool) public REQUESTERS;
+
+    /// @notice The genesis block timestamp.
+    uint256 public immutable GENESIS_BLOCK_TIMESTAMP;
+
+    /// @notice The mapping of reports. Slot -> Report.
+    mapping(uint256 => Report) public reports;
+
+    constructor(
+        address _succinctGateway,
+        bytes32 _functionId,
+        bytes32 _lidoWithdrawalCredential,
+        uint256 _genesisBlockTimestamp,
+        address[] memory _requesters
+    ) {
+        SUCCINCT_GATEWAY = _succinctGateway;
+        FUNCTION_ID = _functionId;
+        LIDO_WITHDRAWAL_CREDENTIAL = _lidoWithdrawalCredential;
+        GENESIS_BLOCK_TIMESTAMP = _genesisBlockTimestamp;
+
+        for (uint256 i = 0; i < _requesters.length; i++) {
+            REQUESTERS[_requesters[i]] = true;
+        }
+    }
+
     /// @notice The entrypoint for requesting an oracle update.
-    function requestUpdate(bytes32 blockRoot, uint64 slot, uint32 callbackGasLimit)
-        external
-        payable
-    {
-        require(msg.sender == address(REQUESTER), "only requester can request proof");
-        require(!reports[uint256(slot)].requested, "already requested");
-        reports[uint256(slot)].requested = true;
-        // TODO: Post EIP-4778, we will get block hash directly from on chain.
-        ISuccinctGateway(FUNCTION_GATEWAY).requestCallback{value: msg.value}(
+    /// @param refSlot The reference slot to request an update for.
+    /// @param callbackGasLimit The gas limit for the callback into handleUpdate.
+    function requestUpdate(uint64 refSlot, uint32 callbackGasLimit) external payable {
+        require(REQUESTERS[msg.sender], "only requester can request proof");
+        require(!reports[uint256(refSlot)].requested, "already requested");
+
+        (uint64 availableSlot, bytes32 availableBlockRoot) = findAvailableSlot(refSlot);
+
+        reports[uint256(refSlot)].requested = true;
+
+        ISuccinctGateway(SUCCINCT_GATEWAY).requestCallback{value: msg.value}(
             FUNCTION_ID,
-            abi.encodePacked(blockRoot, LIDO_WITHDRAWAL_CREDENTIAL),
-            abi.encode(slot),
+            abi.encodePacked(availableBlockRoot, LIDO_WITHDRAWAL_CREDENTIAL),
+            abi.encode(refSlot),
             this.handleUpdate.selector,
             callbackGasLimit
         );
+
+        emit LidoOracleV1Request(refSlot, availableSlot, availableBlockRoot);
+    }
+
+    /// @notice Attempts to find the first available slot and its beacon root before or at the given slot.
+    /// @param refSlot The slot to start searching from.
+    /// @return availableSlot The first available slot found.
+    /// @return availablRoot The beacon root of the first available slot found.
+    function findAvailableSlot(uint64 refSlot)
+        public
+        view
+        returns (uint64 availableSlot, bytes32 availablRoot)
+    {
+        availableSlot = refSlot;
+        bool success;
+        bytes memory result;
+
+        for (uint64 i = 0; i < MAX_SLOT_ATTEMPTS; i++) {
+            uint256 timestamp = GENESIS_BLOCK_TIMESTAMP + (availableSlot * 12) - 12;
+            (success, result) = BEACON_ROOTS.staticcall(abi.encode(timestamp));
+            if (success && result.length > 0) {
+                return (availableSlot, abi.decode(result, (bytes32)));
+            }
+            if (availableSlot == 0) {
+                break;
+            }
+            availableSlot--;
+        }
+        revert("No available slot found");
     }
 
     /// @notice The callback function for the oracle.
     function handleUpdate(bytes memory output, bytes memory context) external {
-        require(msg.sender == FUNCTION_GATEWAY && ISuccinctGateway(FUNCTION_GATEWAY).isCallback());
-        (uint64 slot) = abi.decode(context, (uint64));
+        require(msg.sender == SUCCINCT_GATEWAY && ISuccinctGateway(SUCCINCT_GATEWAY).isCallback());
+        (uint64 refSlot) = abi.decode(context, (uint64));
         (uint64 clBalancesGwei, uint32 numValidators, uint32 numExitedValidators) =
             _readData(output);
 
-        emit LidoOracleV1Update(slot, clBalancesGwei, numValidators, numExitedValidators);
-        reports[slot] = Report({
+        emit LidoOracleV1Update(refSlot, clBalancesGwei, numValidators, numExitedValidators);
+
+        reports[refSlot] = Report({
             requested: true,
             received: true,
             clBalanceGwei: clBalancesGwei,
@@ -81,13 +133,13 @@ contract SuccinctLidoOracleV1 is LidoZKOracle {
         });
     }
 
-    function getReport(uint256 slot)
+    function getReport(uint256 refSlot)
         external
         view
         override
         returns (bool, uint256, uint256, uint256)
     {
-        Report memory report = reports[slot];
+        Report memory report = reports[refSlot];
         return
             (report.received, report.clBalanceGwei, report.numValidators, report.exitedValidators);
     }

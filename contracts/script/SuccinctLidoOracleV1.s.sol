@@ -4,12 +4,39 @@ pragma solidity ^0.8.16;
 import "forge-std/Script.sol";
 import "../src/SuccinctLidoOracleV1.sol";
 
-contract DeployScript is Script {
-    function run() public {
+contract DeploySuccinctLidoOracleV1 is Script {
+    function run() public returns (address) {
         vm.broadcast();
-        SuccinctLidoOracleV1 s = SuccinctLidoOracleV1(0xfD8e3773181Ca832FE0283383277a108609E3E8b);
-        s.requestUpdate{value: 30 gwei * 1_000_000}(
-            0x49869d23ba93a746cc8ea649a48bb6c4b2159cf3a71aef492af63dac27522c9f, 6984000, 1_000_000
+
+        address SUCCINCT_GATEWAY = 0x6c7a05e0AE641c6559fD76ac56641778B6eCd776;
+        bytes32 FUNCTION_ID = 0x2bb8e2d5e3ab1e8e82a3d1cb559a25441f9c80e226b29e469a2a9e87dab7030f;
+        bytes32 LIDO_WITHDRAWAL_CREDENTIAL =
+            0x010000000000000000000000b9d7934878b5fb9610b3fe8a5e441e8fad7e293f;
+
+        uint256 GENESIS_BLOCK_TIMESTAMP;
+        if (block.chainid == 1) {
+            GENESIS_BLOCK_TIMESTAMP = 1606824023;
+        } else if (block.chainid == 5) {
+            GENESIS_BLOCK_TIMESTAMP = 1616508000;
+        } else if (block.chainid == 11155111) {
+            GENESIS_BLOCK_TIMESTAMP = 1655733600;
+        } else if (block.chainid == 17000) {
+            GENESIS_BLOCK_TIMESTAMP = 1695902400;
+        } else {
+            revert("unsupported chainid");
+        }
+
+        address[] memory REQUESTERS = new address[](1);
+        REQUESTERS[0] = msg.sender;
+
+        SuccinctLidoOracleV1 oracle = new SuccinctLidoOracleV1(
+            SUCCINCT_GATEWAY,
+            FUNCTION_ID,
+            LIDO_WITHDRAWAL_CREDENTIAL,
+            GENESIS_BLOCK_TIMESTAMP,
+            REQUESTERS
         );
+
+        return address(oracle);
     }
 }
