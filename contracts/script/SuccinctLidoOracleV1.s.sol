@@ -11,6 +11,8 @@ contract DeploySuccinctLidoOracleV1 is Script {
         address SUCCINCT_GATEWAY = 0x6c7a05e0AE641c6559fD76ac56641778B6eCd776;
         bytes32 FUNCTION_ID = 0x2bb8e2d5e3ab1e8e82a3d1cb559a25441f9c80e226b29e469a2a9e87dab7030f;
 
+        // Chain specific constants can be found at:
+        // https://github.com/lidofinance/docs/blob/main/docs/deployed-contracts/index.md
         bytes32 LIDO_WITHDRAWAL_CREDENTIAL;
         uint256 GENESIS_BLOCK_TIMESTAMP;
         if (block.chainid == 1) {
