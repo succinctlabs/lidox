@@ -15,7 +15,7 @@ For more details, refer to the [original grant proposal](https://research.lido.f
 
 To run the test locally, set `CONSENSUS_RPC_URL` to a mainnet consensus node and run the following command:
 
-```
+```sh
 RUST_LOG=debug cargo test test_circuit --release -- --nocapture
 ```
 
@@ -23,14 +23,14 @@ RUST_LOG=debug cargo test test_circuit --release -- --nocapture
 
 To deploy the contract onchain:
 
-```
+```sh
 cd contracts
-bash script/deploy.sh
+CHAIN=11155111 bash script/deploy.sh
 ```
 
 To send an example request to the contract:
 
-```
+```sh
 cd contracts
 bash script/request.sh
 ```
@@ -39,7 +39,7 @@ bash script/request.sh
 
 To run the operator:
 
-```
+```sh
 cd operator
 cp .env.example .env
 yarn install
@@ -54,7 +54,13 @@ More details coming soon!
 
 ## Sepolia Deployment
 
-Contract Address: [0x36B2EC6419e085cFE06CBF2C70C56dF05F090686](https://sepolia.etherscan.io/address/0x36B2EC6419e085cFE06CBF2C70C56dF05F090686)
+Contract Address: [0xc701301b2354Ae7a2BC7C624452e0b3b8881fd59](https://sepolia.etherscan.io/address/0xc701301b2354Ae7a2BC7C624452e0b3b8881fd59)
+
+Fulfill Transaction: [0x15e85de92320eefa61a5e7e63548119c5055b0ab1dd7db1add98d59f21f8faeb](https://sepolia.etherscan.io/tx/0x15e85de92320eefa61a5e7e63548119c5055b0ab1dd7db1add98d59f21f8faeb)
+
+## Goerli Deployment
+
+Contract Address: [0xfD8e3773181Ca832FE0283383277a108609E3E8b](https://goerli.etherscan.io/address/0xfd8e3773181ca832fe0283383277a108609e3e8b)
 
 Fulfill Transaction: [0xf0858e2180170a3b9b7fe31f09648e2d4544590be3eaca0ca8e14c1c00d1b341](https://goerli.etherscan.io/tx/0xf0858e2180170a3b9b7fe31f09648e2d4544590be3eaca0ca8e14c1c00d1b341)
 
