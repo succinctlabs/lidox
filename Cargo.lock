@@ -51,9 +51,9 @@ dependencies = [
 
 [[package]]
 name = "ahash"
-version = "0.8.6"
+version = "0.8.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "91429305e9f0a25f6205c5b8e0d2db09e0708a7a6df0f42212bb56c32c8ac97a"
+checksum = "d713b3834d76b85304d4d525563c1276e2e30dc97cc67bfb4585a4a29fc2c89f"
 dependencies = [
  "cfg-if",
  "const-random",
@@ -690,30 +690,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "curta"
-version = "0.1.0"
-source = "git+https://github.com/succinctlabs/curta.git#59e489d21622a92b25a2e4a5b710ce322f309b87"
-dependencies = [
- "anyhow",
- "bincode",
- "curve25519-dalek",
- "env_logger 0.9.3",
- "hex",
- "itertools 0.10.5",
- "log",
- "num",
- "plonky2",
- "plonky2_maybe_rayon 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "rand",
- "serde",
- "subtle-encoding",
-]
-
-[[package]]
 name = "curve25519-dalek"
-version = "4.1.1"
+version = "4.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e89b8c6a2e4b1f45971ad09761aafb85514a84744b67a95e32c3cc1352d1f65c"
+checksum = "f711ade317dd348950a9910f81c5947e3d8907ebd2b83f76203ff1807e6a2bc2"
 dependencies = [
  "cfg-if",
  "cpufeatures",
@@ -1388,9 +1368,9 @@ dependencies = [
 
 [[package]]
 name = "fiat-crypto"
-version = "0.2.5"
+version = "0.1.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "27573eac26f4dd11e2b1916c3fe1baa56407c83c71a773a8ba17ec0bca03b6b7"
+checksum = "e825f6987101665dea6ec934c09ec6d721de7bc1bf92248e1d5810c8cd636b77"
 
 [[package]]
 name = "fixed-hash"
@@ -2130,7 +2110,7 @@ dependencies = [
  "hex",
  "itertools 0.11.0",
  "log",
- "plonky2",
+ "plonky2 0.1.4 (git+https://github.com/mir-protocol/plonky2.git)",
  "plonky2x",
  "serde",
 ]
@@ -2674,7 +2654,7 @@ checksum = "14e6ab3f592e6fb464fc9712d8d6e6912de6473954635fd76a589d832cffcbb0"
 [[package]]
 name = "plonky2"
 version = "0.1.4"
-source = "git+https://github.com/mir-protocol/plonky2.git#0bf9cd2f868303abb67e2ff10ab0e7802d054ae3"
+source = "git+https://github.com/mir-protocol/plonky2.git?rev=d2598bd#d2598bded0cb24d36b0a9900e8ffd104c470831b"
 dependencies = [
  "ahash",
  "anyhow",
@@ -2684,13 +2664,52 @@ dependencies = [
  "keccak-hash",
  "log",
  "num",
- "plonky2_field",
+ "plonky2_field 0.1.1 (git+https://github.com/mir-protocol/plonky2.git?rev=d2598bd)",
+ "plonky2_maybe_rayon 0.1.1 (git+https://github.com/mir-protocol/plonky2.git?rev=d2598bd)",
+ "plonky2_util 0.1.1 (git+https://github.com/mir-protocol/plonky2.git?rev=d2598bd)",
+ "rand",
+ "serde",
+ "serde_json",
+ "static_assertions",
+ "unroll",
+ "web-time",
+]
+
+[[package]]
+name = "plonky2"
+version = "0.1.4"
+source = "git+https://github.com/mir-protocol/plonky2.git#a7b985ce392f49e0b778af043109338ca187f3de"
+dependencies = [
+ "ahash",
+ "anyhow",
+ "getrandom",
+ "hashbrown 0.14.3",
+ "itertools 0.11.0",
+ "keccak-hash",
+ "log",
+ "num",
+ "plonky2_field 0.1.1 (git+https://github.com/mir-protocol/plonky2.git)",
  "plonky2_maybe_rayon 0.1.1 (git+https://github.com/mir-protocol/plonky2.git)",
- "plonky2_util",
+ "plonky2_util 0.1.1 (git+https://github.com/mir-protocol/plonky2.git)",
  "rand",
  "rand_chacha",
  "serde",
- "serde_json",
+ "static_assertions",
+ "unroll",
+ "web-time",
+]
+
+[[package]]
+name = "plonky2_field"
+version = "0.1.1"
+source = "git+https://github.com/mir-protocol/plonky2.git?rev=d2598bd#d2598bded0cb24d36b0a9900e8ffd104c470831b"
+dependencies = [
+ "anyhow",
+ "itertools 0.11.0",
+ "num",
+ "plonky2_util 0.1.1 (git+https://github.com/mir-protocol/plonky2.git?rev=d2598bd)",
+ "rand",
+ "serde",
  "static_assertions",
  "unroll",
 ]
@@ -2698,12 +2717,12 @@ dependencies = [
 [[package]]
 name = "plonky2_field"
 version = "0.1.1"
-source = "git+https://github.com/mir-protocol/plonky2.git#0bf9cd2f868303abb67e2ff10ab0e7802d054ae3"
+source = "git+https://github.com/mir-protocol/plonky2.git#a7b985ce392f49e0b778af043109338ca187f3de"
 dependencies = [
  "anyhow",
  "itertools 0.11.0",
  "num",
- "plonky2_util",
+ "plonky2_util 0.1.1 (git+https://github.com/mir-protocol/plonky2.git)",
  "rand",
  "serde",
  "static_assertions",
@@ -2722,7 +2741,15 @@ dependencies = [
 [[package]]
 name = "plonky2_maybe_rayon"
 version = "0.1.1"
-source = "git+https://github.com/mir-protocol/plonky2.git#0bf9cd2f868303abb67e2ff10ab0e7802d054ae3"
+source = "git+https://github.com/mir-protocol/plonky2.git?rev=d2598bd#d2598bded0cb24d36b0a9900e8ffd104c470831b"
+dependencies = [
+ "rayon",
+]
+
+[[package]]
+name = "plonky2_maybe_rayon"
+version = "0.1.1"
+source = "git+https://github.com/mir-protocol/plonky2.git#a7b985ce392f49e0b778af043109338ca187f3de"
 dependencies = [
  "rayon",
 ]
@@ -2730,12 +2757,17 @@ dependencies = [
 [[package]]
 name = "plonky2_util"
 version = "0.1.1"
-source = "git+https://github.com/mir-protocol/plonky2.git#0bf9cd2f868303abb67e2ff10ab0e7802d054ae3"
+source = "git+https://github.com/mir-protocol/plonky2.git?rev=d2598bd#d2598bded0cb24d36b0a9900e8ffd104c470831b"
+
+[[package]]
+name = "plonky2_util"
+version = "0.1.1"
+source = "git+https://github.com/mir-protocol/plonky2.git#a7b985ce392f49e0b778af043109338ca187f3de"
 
 [[package]]
 name = "plonky2x"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/succinctx.git#5005786dc2d407eec7acfeeeed6a42eafe92a20f"
+source = "git+https://github.com/succinctlabs/succinctx.git#8f3a9c3b12ae5723a84d14f933371c85b2f8417f"
 dependencies = [
  "anyhow",
  "array-macro",
@@ -2744,7 +2776,6 @@ dependencies = [
  "base64 0.13.1",
  "bincode",
  "clap",
- "curta",
  "curve25519-dalek",
  "digest",
  "dotenv",
@@ -2759,7 +2790,7 @@ dependencies = [
  "log",
  "num",
  "num-bigint 0.4.4",
- "plonky2",
+ "plonky2 0.1.4 (git+https://github.com/mir-protocol/plonky2.git?rev=d2598bd)",
  "plonky2x-derive",
  "rand",
  "reqwest",
@@ -2769,6 +2800,7 @@ dependencies = [
  "serde_with",
  "sha2",
  "sha256",
+ "starkyx",
  "tokio",
  "tracing",
  "uuid 1.6.1",
@@ -2777,7 +2809,7 @@ dependencies = [
 [[package]]
 name = "plonky2x-derive"
 version = "0.1.0"
-source = "git+https://github.com/succinctlabs/succinctx.git#5005786dc2d407eec7acfeeeed6a42eafe92a20f"
+source = "git+https://github.com/succinctlabs/succinctx.git#8f3a9c3b12ae5723a84d14f933371c85b2f8417f"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3595,6 +3627,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "starkyx"
+version = "0.1.0"
+source = "git+https://github.com/succinctlabs/starkyx.git#dc819a6d23e82603c2467f0975d8302c09b15509"
+dependencies = [
+ "anyhow",
+ "bincode",
+ "curve25519-dalek",
+ "env_logger 0.9.3",
+ "hex",
+ "itertools 0.10.5",
+ "log",
+ "num",
+ "plonky2 0.1.4 (git+https://github.com/mir-protocol/plonky2.git?rev=d2598bd)",
+ "plonky2_maybe_rayon 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rand",
+ "serde",
+ "subtle-encoding",
+]
+
+[[package]]
 name = "static_assertions"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4251,6 +4303,16 @@ name = "web-sys"
 version = "0.3.66"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "50c24a44ec86bb68fbecd1b3efed7e85ea5621b39b35ef2766b66cd984f8010f"
+dependencies = [
+ "js-sys",
+ "wasm-bindgen",
+]
+
+[[package]]
+name = "web-time"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2ee269d72cc29bf77a2c4bc689cc750fb39f5cbd493d2205bbb3f5c7779cf7b0"
 dependencies = [
  "js-sys",
  "wasm-bindgen",

@@ -14,9 +14,7 @@
 //! Note that using the withdrawal credentials as a filter is not secure as acknowledged in this
 //! thread: https://research.lido.fi/t/zkllvm-trustless-zk-proof-tvl-oracle/5028/8.
 #![allow(clippy::needless_range_loop)]
-#![feature(async_fn_in_trait)]
 
-use plonky2::plonk::config::{AlgebraicHasher, GenericConfig};
 use plonky2x::backend::circuit::{Circuit, PlonkParameters};
 use plonky2x::backend::function::Plonky2xFunction;
 use plonky2x::frontend::eth::beacon::generators::{
@@ -28,6 +26,7 @@ use plonky2x::frontend::hash::poseidon::poseidon256::PoseidonHashOutVariable;
 use plonky2x::frontend::mapreduce::generator::{MapReduceDynamicGenerator, MapReduceGenerator};
 use plonky2x::frontend::uint::uint64::U64Variable;
 use plonky2x::frontend::vars::{CircuitVariable, SSZVariable, U256Variable, U32Variable};
+use plonky2x::prelude::plonky2::plonk::config::{AlgebraicHasher, GenericConfig};
 use plonky2x::prelude::{Bytes32Variable, CircuitBuilder, HintRegistry};
 
 /// The number of slots per epoch in the consensus layer.
@@ -48,8 +47,7 @@ struct LidoOracleV1<const V: usize, const B: usize, const N: usize>;
 impl<const V: usize, const B: usize, const N: usize> Circuit for LidoOracleV1<V, B, N> {
     fn define<L: PlonkParameters<D>, const D: usize>(builder: &mut CircuitBuilder<L, D>)
     where
-        <<L as PlonkParameters<D>>::Config as GenericConfig<D>>::Hasher:
-            AlgebraicHasher<<L as PlonkParameters<D>>::Field>,
+        <L::Config as GenericConfig<D>>::Hasher: AlgebraicHasher<L::Field>,
     {
         // Read the block root and withdrawal credentials from the EVM.
         let block_root = builder.evm_read::<Bytes32Variable>();
