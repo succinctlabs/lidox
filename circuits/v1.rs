@@ -17,6 +17,7 @@
 
 use plonky2x::backend::circuit::{Circuit, PlonkParameters};
 use plonky2x::backend::function::Plonky2xFunction;
+use plonky2x::frontend::builder::CircuitBuilder;
 use plonky2x::frontend::eth::beacon::generators::{
     BeaconPartialBalancesHint, BeaconPartialValidatorsHint, BeaconValidatorSubtreeHint,
     BeaconValidatorSubtreePoseidonHint, BeaconValidatorSubtreesHint,
@@ -26,7 +27,8 @@ use plonky2x::frontend::hash::poseidon::poseidon256::PoseidonHashOutVariable;
 use plonky2x::frontend::mapreduce::generator::{MapReduceDynamicGenerator, MapReduceGenerator};
 use plonky2x::frontend::uint::uint64::U64Variable;
 use plonky2x::frontend::vars::{CircuitVariable, SSZVariable, U256Variable, U32Variable};
-use plonky2x::prelude::{Bytes32Variable, CircuitBuilder};
+use plonky2x::prelude::plonky2::plonk::config::{AlgebraicHasher, GenericConfig};
+use plonky2x::prelude::{Bytes32Variable, HintRegistry};
 
 /// The number of slots per epoch in the consensus layer.
 const SLOTS_PER_EPOCH: u64 = 32;
@@ -44,11 +46,9 @@ const NB_VALIDATORS: usize = 2097152;
 struct LidoOracleV1<const V: usize, const B: usize, const N: usize>;
 
 impl<const V: usize, const B: usize, const N: usize> Circuit for LidoOracleV1<V, B, N> {
-    fn define<L: PlonkParameters<D>, const D: usize>(
-        builder: &mut CircuitBuilder<L, D>
-    )
+    fn define<L: PlonkParameters<D>, const D: usize>(builder: &mut CircuitBuilder<L, D>)
     where
-        <<L as plonky2x::prelude::PlonkParameters<D>>::Config as plonky2x::prelude::plonky2::plonk::config::GenericConfig<D>>::Hasher: plonky2x::prelude::plonky2::plonk::config::AlgebraicHasher<<L as plonky2x::prelude::PlonkParameters<D>>::Field>,
+        <L::Config as GenericConfig<D>>::Hasher: AlgebraicHasher<L::Field>,
     {
         // Read the block root and withdrawal credentials from the EVM.
         let block_root = builder.evm_read::<Bytes32Variable>();
@@ -240,11 +240,9 @@ impl<const V: usize, const B: usize, const N: usize> Circuit for LidoOracleV1<V,
         builder.evm_write::<U32Variable>(balance_output.3);
     }
 
-    fn register_generators<L: PlonkParameters<D>, const D: usize>(
-        registry: &mut plonky2x::prelude::HintRegistry<L, D>,
-    ) where
-    <<L as PlonkParameters<D>>::Config as plonky2x::prelude::plonky2::plonk::config::GenericConfig<D>>::Hasher:
-    plonky2x::prelude::plonky2::plonk::config::AlgebraicHasher<L::Field>,
+    fn register_generators<L: PlonkParameters<D>, const D: usize>(registry: &mut HintRegistry<L, D>)
+    where
+        <<L as PlonkParameters<D>>::Config as GenericConfig<D>>::Hasher: AlgebraicHasher<L::Field>,
     {
         let dynamic_id = MapReduceDynamicGenerator::<L, (), (), (), Self, 1, D>::id();
         registry.register_simple::<MapReduceDynamicGenerator<
