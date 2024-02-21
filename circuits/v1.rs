@@ -17,7 +17,6 @@
 
 use plonky2x::backend::circuit::{Circuit, PlonkParameters};
 use plonky2x::backend::function::Plonky2xFunction;
-use plonky2x::frontend::builder::CircuitBuilder;
 use plonky2x::frontend::eth::beacon::generators::{
     BeaconPartialBalancesHint, BeaconPartialValidatorsHint, BeaconValidatorSubtreeHint,
     BeaconValidatorSubtreePoseidonHint, BeaconValidatorSubtreesHint,
@@ -28,7 +27,7 @@ use plonky2x::frontend::mapreduce::generator::{MapReduceDynamicGenerator, MapRed
 use plonky2x::frontend::uint::uint64::U64Variable;
 use plonky2x::frontend::vars::{CircuitVariable, SSZVariable, U256Variable, U32Variable};
 use plonky2x::prelude::plonky2::plonk::config::{AlgebraicHasher, GenericConfig};
-use plonky2x::prelude::{Bytes32Variable, HintRegistry};
+use plonky2x::prelude::{Bytes32Variable, CircuitBuilder, HintRegistry};
 
 /// The number of slots per epoch in the consensus layer.
 const SLOTS_PER_EPOCH: u64 = 32;
