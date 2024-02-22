@@ -9,7 +9,9 @@ contract DeploySuccinctLidoOracleV1 is Script {
         vm.broadcast();
 
         address SUCCINCT_GATEWAY = 0x6c7a05e0AE641c6559fD76ac56641778B6eCd776;
-        bytes32 FUNCTION_ID = 0x2bb8e2d5e3ab1e8e82a3d1cb559a25441f9c80e226b29e469a2a9e87dab7030f;
+
+        // https://alpha.succinct.xyz/lidofinance/lidox/deployments
+        bytes32 FUNCTION_ID = 0xf7a148777561414610fb93d42715af696b0e10b4f7f79d27d00fa883eb44a85f;
 
         // Chain specific constants can be found at:
         // https://github.com/lidofinance/docs/blob/main/docs/deployed-contracts/index.md

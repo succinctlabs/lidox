@@ -102,7 +102,7 @@ contract SuccinctLidoOracleV1 is LidoZKOracle {
         bytes memory result;
 
         for (uint64 i = 0; i < MAX_SLOT_ATTEMPTS; i++) {
-            uint256 timestamp = GENESIS_BLOCK_TIMESTAMP + (availableSlot * 12) - 12;
+            uint256 timestamp = GENESIS_BLOCK_TIMESTAMP + (availableSlot * 12) + 12;
             (success, result) = BEACON_ROOTS.staticcall(abi.encode(timestamp));
             if (success && result.length > 0) {
                 return (availableSlot, abi.decode(result, (bytes32)));
