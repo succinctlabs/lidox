@@ -10,7 +10,7 @@ export type Config = {
 
 export const ALL_CONFIGS: Record<string, Config> = {
   sepolia: {
-    succinctOracleAddress: "0x2695BA37DcB021a0adc3a52b3B171631Bb3367Dd",
+    succinctOracleAddress: "0xcDd9FbfFA3cFb8527e1D9080C8E44C12f4a81925",
     lidoLocatorAddress: "0x8f6254332f69557A72b0DA2D5F0Bc07d4CA991E7",
     chainId: 11155111,
     consensusChainId: 11155111,

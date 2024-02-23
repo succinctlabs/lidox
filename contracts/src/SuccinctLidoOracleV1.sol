@@ -92,26 +92,31 @@ contract SuccinctLidoOracleV1 is LidoZKOracle {
     /// @param refSlot The slot to start searching from.
     /// @return availableSlot The first available slot found.
     /// @return availablRoot The beacon root of the first available slot found.
+    /// @dev BEACON_ROOTS returns a block root for a given parent block's timestamp, e.g. to get the block root for slot
+    ///      1000, you use the timestamp of block 1001.
     function findAvailableSlot(uint64 refSlot)
         public
         view
         returns (uint64 availableSlot, bytes32 availablRoot)
     {
-        availableSlot = refSlot;
+        uint64 parentSlot = refSlot + 1;
         bool success;
         bytes memory result;
 
         for (uint64 i = 0; i < MAX_SLOT_ATTEMPTS; i++) {
-            uint256 timestamp = GENESIS_BLOCK_TIMESTAMP + (availableSlot * 12) + 12;
-            (success, result) = BEACON_ROOTS.staticcall(abi.encode(timestamp));
-            if (success && result.length > 0) {
-                return (availableSlot, abi.decode(result, (bytes32)));
-            }
-            if (availableSlot == 0) {
+            if (parentSlot == 0) {
                 break;
             }
-            availableSlot--;
+
+            uint256 parentTimestamp = GENESIS_BLOCK_TIMESTAMP + (parentSlot * 12);
+            (success, result) = BEACON_ROOTS.staticcall(abi.encode(parentTimestamp));
+            if (success && result.length > 0) {
+                return (parentSlot - 1, abi.decode(result, (bytes32)));
+            }
+
+            parentSlot--;
         }
+
         revert("No available slot found");
     }
 
