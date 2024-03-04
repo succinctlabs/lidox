@@ -149,8 +149,6 @@ export class Operator {
     const lidoHashConsensusAddress =
       await lidoAccountingOracle.read.getConsensusContract();
 
-    console.log("Lido hash consensus address:", lidoHashConsensusAddress);
-
     this.lidoHashConsensus = getContract({
       abi: LIDO_HASH_CONSENSUS_ABI,
       address: lidoHashConsensusAddress,
