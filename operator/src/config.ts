@@ -9,8 +9,16 @@ export type Config = {
 };
 
 export const ALL_CONFIGS: Record<string, Config> = {
+  sepolia: {
+    succinctOracleAddress: "0x1527D9Ec1c94E5717e79369a0fc9dA6535f81FDe",
+    lidoLocatorAddress: "0x8f6254332f69557A72b0DA2D5F0Bc07d4CA991E7",
+    chainId: 11155111,
+    consensusChainId: 11155111,
+    functionId:
+      "0x7cf538c3c8d0a25c74c98b8022517c64cb4a0bf0213b56274a3c134ab1d10435",
+  },
   holesky: {
-    succinctOracleAddress: "0xe90A3F2B97EeC62157ad48Dc26EBED28e60649c9",
+    succinctOracleAddress: "0x7DEE138A6faf87A9025Af21c3C3cE0658e13a574",
     lidoLocatorAddress: "0x28FAB2059C713A7F9D8c86Db49f9bb0e96Af1ef8",
     chainId: 17000,
     consensusChainId: 17000,

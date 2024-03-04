@@ -13,7 +13,7 @@ import {
   http,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { goerli, holesky, mainnet } from "viem/chains";
+import { goerli, holesky, mainnet, sepolia } from "viem/chains";
 import {
   LIDO_ACCOUNTING_ORACLE_ABI,
   LIDO_HASH_CONSENSUS_ABI,
@@ -21,7 +21,6 @@ import {
   SUCCINCT_LIDO_ORACLE_V1_ABI,
 } from "./abi.js";
 import { Config } from "./config.js";
-import { hashBeaconBlockHeader, toHexString, tryGetHeader } from "./util.js";
 
 type ParentClient = {
   source: PublicClient;
@@ -62,6 +61,9 @@ export class Operator {
         break;
       case 5:
         this.chain = goerli;
+        break;
+      case 11155111:
+        this.chain = sepolia;
         break;
       case 17000:
         this.chain = holesky;
@@ -241,21 +243,12 @@ export class Operator {
           console.log("Finalized header is past deadline slot, skipping");
           return;
         }
-        const header = await getFirstNonMissedSlot(
-          this.client.consensus,
-          Number(refSlot),
-          finalizedHeader.slot
-        );
-        const blockRoot = toHexString(hashBeaconBlockHeader(header)) as Hex;
-        console.log("Requesting update: ", blockRoot, refSlot);
+        console.log("Requesting update: ", refSlot);
 
-        await this.succinctOracle!.write.requestUpdate(
-          [blockRoot, refSlot, 500000],
-          {
-            account: this.account,
-            chain: this.chain,
-          }
-        );
+        await this.succinctOracle!.write.requestUpdate([refSlot, 500000], {
+          account: this.account,
+          chain: this.chain,
+        });
       } else {
         console.log("Succinct oracle has ref slot");
       }
@@ -263,19 +256,4 @@ export class Operator {
       console.error("Error in loop:", e);
     }
   }
-}
-
-// https://github.com/lidofinance/lido-oracle/blob/74265f4d641d69774fc97caebc22e7c3ff84ace5/src/utils/slot.py#L25
-async function getFirstNonMissedSlot(
-  client: ConsensusClient,
-  targetSlot: number,
-  finalizedSlot: number
-) {
-  console.log("Getting first non-missed slot", targetSlot, finalizedSlot);
-  for (let i = targetSlot; i <= finalizedSlot; i++) {
-    console.log("Trying slot:", i);
-    const header = await tryGetHeader(client, i);
-    if (header) return header;
-  }
-  throw new Error("No non-missed slot found");
 }

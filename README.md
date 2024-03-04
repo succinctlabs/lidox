@@ -15,7 +15,7 @@ For more details, refer to the [original grant proposal](https://research.lido.f
 
 To run the test locally, set `CONSENSUS_RPC_URL` to a mainnet consensus node and run the following command:
 
-```
+```sh
 RUST_LOG=debug cargo test test_circuit --release -- --nocapture
 ```
 
@@ -23,14 +23,14 @@ RUST_LOG=debug cargo test test_circuit --release -- --nocapture
 
 To deploy the contract onchain:
 
-```
+```sh
 cd contracts
-bash script/deploy.sh
+CHAIN=11155111 bash script/deploy.sh
 ```
 
 To send an example request to the contract:
 
-```
+```sh
 cd contracts
 bash script/request.sh
 ```
@@ -39,9 +39,10 @@ bash script/request.sh
 
 To run the operator:
 
-```
+```sh
 cd operator
 cp .env.example .env
+yarn install
 yarn build && yarn cli run <config-name>
 ```
 
@@ -50,6 +51,12 @@ Config is located at `operator/src/config.ts`
 ## Holesky Deployment
 
 More details coming soon!
+
+## Sepolia Deployment
+
+Contract Address: [0x1527D9Ec1c94E5717e79369a0fc9dA6535f81FDe](https://sepolia.etherscan.io/address/0x1527D9Ec1c94E5717e79369a0fc9dA6535f81FDe)
+
+Fulfill Transaction: [0xe316afe4cdb07178d1b69e7536a45decef3f85a2ae5a509fee68f3c23aa0ff13](https://sepolia.etherscan.io/tx/0xe316afe4cdb07178d1b69e7536a45decef3f85a2ae5a509fee68f3c23aa0ff13)
 
 ## Goerli Deployment
 
