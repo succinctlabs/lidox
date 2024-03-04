@@ -9,4 +9,6 @@ signer=$(echo $(cast wallet address --private-key $PRIVATE_KEY))
 
 echo "Deploying SuccinctLidoOracleV1 to $CHAIN_ID with deployer $signer"
 
-forge script DeploySuccinctLidoOracleV1 --rpc-url $rpc --private-key $PRIVATE_KEY --broadcast --verify --verifier etherscan --etherscan-api-key $etherscan_key
+echo "etherscan_key: $etherscan_key"
+
+forge script DeploySuccinctLidoOracleV1 --rpc-url $rpc --private-key $PRIVATE_KEY --broadcast --verify --verifier etherscan --etherscan-api-key "6DMIWPAF4ME6KV31D3IK4KWC4VUW584M3S"

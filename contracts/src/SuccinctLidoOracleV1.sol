@@ -93,35 +93,35 @@ contract SuccinctLidoOracleV1 is LidoZKOracle {
     /// @return availableSlot The first available slot found.
     /// @return availablRoot The beacon root of the first available slot found.
     /// @dev BEACON_ROOTS returns a block root for a given parent block's timestamp, e.g. to get the block root for slot
-    ///      1000, you use the timestamp of block 1001.
+    ///      1000, you use the timestamp of slot 1001.
     function findAvailableSlot(uint64 refSlot)
         public
         view
         returns (uint64 availableSlot, bytes32 availablRoot)
     {
-        uint64 parentSlot = refSlot + 1;
+        uint64 currSlot = refSlot + 1;
         bool success;
         bytes memory result;
 
         for (uint64 i = 0; i < MAX_SLOT_ATTEMPTS; i++) {
-            if (parentSlot == 0) {
+            if (currSlot == 0) {
                 break;
             }
 
-            uint256 parentTimestamp = GENESIS_BLOCK_TIMESTAMP + (parentSlot * 12);
-            (success, result) = BEACON_ROOTS.staticcall(abi.encode(parentTimestamp));
+            uint256 currTimestamp = GENESIS_BLOCK_TIMESTAMP + (currSlot * 12);
+            (success, result) = BEACON_ROOTS.staticcall(abi.encode(currTimestamp));
             if (success && result.length > 0) {
-                return (parentSlot - 1, abi.decode(result, (bytes32)));
+                return (currSlot - 1, abi.decode(result, (bytes32)));
             }
 
-            parentSlot--;
+            currSlot--;
         }
 
         revert("No available slot found");
     }
 
     /// @notice The callback function for the oracle.
-    function handleUpdate(bytes memory output, bytes memory context) external {
+    function handleUpdate(bytes calldata output, bytes calldata context) external {
         require(msg.sender == SUCCINCT_GATEWAY && ISuccinctGateway(SUCCINCT_GATEWAY).isCallback());
         (uint64 refSlot) = abi.decode(context, (uint64));
         (uint64 clBalancesGwei, uint32 numValidators, uint32 numExitedValidators) =
@@ -150,15 +150,11 @@ contract SuccinctLidoOracleV1 is LidoZKOracle {
     }
 
     /// @dev A helper function to read a uint64, uint32, and uint32 from a bytes array.
-    function _readData(bytes memory _output) internal pure returns (uint64, uint32, uint32) {
-        uint64 value1;
-        uint32 value2;
-        uint32 value3;
-        assembly {
-            value1 := mload(add(_output, 0x08)) // read uint64
-            value2 := mload(add(_output, 0x0C)) // read uint32
-            value3 := mload(add(_output, 0x10)) // read uint32
-        }
+    function _readData(bytes calldata _output) internal pure returns (uint64, uint32, uint32) {
+        require(_output.length >= 14, "invalid output data");
+        uint64 value1 = uint64(bytes8(_output[:8]));
+        uint32 value2 = uint32(bytes4(_output[8:12]));
+        uint32 value3 = uint32(bytes4(_output[12:16]));
         return (value1, value2, value3);
     }
 }
