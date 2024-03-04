@@ -67,39 +67,39 @@ contract SuccinctLidoOracleV1 is LidoZKOracle {
     }
 
     /// @notice The entrypoint for requesting an oracle update.
-    /// @param refSlot The reference slot to request an update for.
-    /// @param callbackGasLimit The gas limit for the callback into handleUpdate.
-    function requestUpdate(uint64 refSlot, uint32 callbackGasLimit) external payable {
+    /// @param _refSlot The reference slot to request an update for.
+    /// @param _callbackGasLimit The gas limit for the callback into handleUpdate.
+    function requestUpdate(uint64 _refSlot, uint32 _callbackGasLimit) external payable {
         require(REQUESTERS[msg.sender], "only requester can request proof");
-        require(!reports[uint256(refSlot)].requested, "already requested");
+        require(!reports[uint256(_refSlot)].requested, "already requested");
 
-        (uint64 availableSlot, bytes32 availableBlockRoot) = findAvailableSlot(refSlot);
+        (uint64 availableSlot, bytes32 availableBlockRoot) = findAvailableSlot(_refSlot);
 
-        reports[uint256(refSlot)].requested = true;
+        reports[uint256(_refSlot)].requested = true;
 
         ISuccinctGateway(SUCCINCT_GATEWAY).requestCallback{value: msg.value}(
             FUNCTION_ID,
             abi.encodePacked(availableBlockRoot, LIDO_WITHDRAWAL_CREDENTIAL),
-            abi.encode(refSlot),
+            abi.encode(_refSlot),
             this.handleUpdate.selector,
-            callbackGasLimit
+            _callbackGasLimit
         );
 
-        emit LidoOracleV1Request(refSlot, availableSlot, availableBlockRoot);
+        emit LidoOracleV1Request(_refSlot, availableSlot, availableBlockRoot);
     }
 
     /// @notice Attempts to find the first available slot and its beacon root before or at the given slot.
-    /// @param refSlot The slot to start searching from.
+    /// @param _refSlot The slot to start searching from.
     /// @return availableSlot The first available slot found.
     /// @return availablRoot The beacon root of the first available slot found.
     /// @dev BEACON_ROOTS returns a block root for a given parent block's timestamp, e.g. to get the block root for slot
     ///      1000, you use the timestamp of slot 1001.
-    function findAvailableSlot(uint64 refSlot)
+    function findAvailableSlot(uint64 _refSlot)
         public
         view
         returns (uint64 availableSlot, bytes32 availablRoot)
     {
-        uint64 currSlot = refSlot + 1;
+        uint64 currSlot = _refSlot + 1;
         bool success;
         bytes memory result;
 
@@ -121,11 +121,11 @@ contract SuccinctLidoOracleV1 is LidoZKOracle {
     }
 
     /// @notice The callback function for the oracle.
-    function handleUpdate(bytes calldata output, bytes calldata context) external {
+    function handleUpdate(bytes calldata _output, bytes calldata _context) external {
         require(msg.sender == SUCCINCT_GATEWAY && ISuccinctGateway(SUCCINCT_GATEWAY).isCallback());
-        (uint64 refSlot) = abi.decode(context, (uint64));
+        (uint64 refSlot) = abi.decode(_context, (uint64));
         (uint64 clBalancesGwei, uint32 numValidators, uint32 numExitedValidators) =
-            _readData(output);
+            _readData(_output);
 
         emit LidoOracleV1Update(refSlot, clBalancesGwei, numValidators, numExitedValidators);
 

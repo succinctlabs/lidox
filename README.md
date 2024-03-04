@@ -54,7 +54,7 @@ More details coming soon!
 
 ## Sepolia Deployment
 
-Contract Address: [0xcDd9FbfFA3cFb8527e1D9080C8E44C12f4a81925](https://sepolia.etherscan.io/address/0xcDd9FbfFA3cFb8527e1D9080C8E44C12f4a81925)
+Contract Address: [0x1527D9Ec1c94E5717e79369a0fc9dA6535f81FDe](https://sepolia.etherscan.io/address/0x1527D9Ec1c94E5717e79369a0fc9dA6535f81FDe)
 
 Fulfill Transaction: [0x2bb75dc74c6cd9d9ef838fa9110a004fd16a7bc657a873b19baf7ccc7692c38d](https://sepolia.etherscan.io/tx/0x2bb75dc74c6cd9d9ef838fa9110a004fd16a7bc657a873b19baf7ccc7692c38d)
 
