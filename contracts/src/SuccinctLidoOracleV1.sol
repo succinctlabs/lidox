@@ -85,13 +85,13 @@ contract SuccinctLidoOracleV1 is LidoZKOracle {
     }
 
     /// @notice Attempts to find the block root for the given slot.
-    /// @param _targetSlot The slot to get the block root for.
+    /// @param _slot The slot to get the block root for.
     /// @return blockRoot The beacon block root of the given slot.
     /// @dev BEACON_ROOTS returns a block root for a given parent block's timestamp. To get the block root for slot
     ///      N, you use the timestamp of slot N+1. If N+1 is not avaliable, you use the timestamp of slot N+2, and
     //       so on.
-    function findBlockRoot(uint64 _targetSlot) public view returns (bytes32 blockRoot) {
-        uint256 currBlockTimestamp = GENESIS_BLOCK_TIMESTAMP + ((_targetSlot + 1) * 12);
+    function findBlockRoot(uint64 _slot) public view returns (bytes32 blockRoot) {
+        uint256 currBlockTimestamp = GENESIS_BLOCK_TIMESTAMP + ((_slot + 1) * 12);
 
         while (currBlockTimestamp <= block.timestamp) {
             (bool success, bytes memory result) =
