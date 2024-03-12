@@ -36,6 +36,9 @@ contract SuccinctLidoOracleV1Test is Test {
             requesters
         );
 
+        // Set the vm's block.timestamp to 100 slots after the target slot.
+        vm.warp(TEST_REF_TIMESTAMP + 1200);
+
         // Return the blockroot when the pre-compiled is called with the parent timestamp.
         vm.mockCall(BEACON_ROOTS, abi.encode(TEST_CHILD_TIMESTAMP), abi.encode(TEST_REF_ROOT));
     }

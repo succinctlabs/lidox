@@ -16,7 +16,7 @@ contract SuccinctLidoOracleV1 is LidoZKOracle {
     }
 
     /// @dev The event emitted when a request is made.
-    event LidoOracleV1Request(uint64 refSlot, uint64 availableSlot, bytes32 availableBlockRoot);
+    event LidoOracleV1Request(uint64 refSlot, bytes32 availableBlockRoot);
 
     /// @dev The event emitted when a callback is received.
     event LidoOracleV1Update(
@@ -27,10 +27,6 @@ contract SuccinctLidoOracleV1 is LidoZKOracle {
     /// @dev https://eips.ethereum.org/EIPS/eip-4788
     address internal constant BEACON_ROOTS = 0x000F3df6D732807Ef1319fB7B8bB8522d0Beac02;
 
-    /// @notice The maximum number of slots to search through.
-    /// @dev This is 1 day worth of slots.
-    uint256 internal constant MAX_SLOT_ATTEMPTS = 7200;
-
     /// @notice The address of the Succinct gateway.
     address public immutable SUCCINCT_GATEWAY;
 
@@ -40,11 +36,11 @@ contract SuccinctLidoOracleV1 is LidoZKOracle {
     /// @notice The withdrawal credential of all Lido validators.
     bytes32 public immutable LIDO_WITHDRAWAL_CREDENTIAL;
 
-    /// @notice The mapping of requesters. Address -> IsRequester.
-    mapping(address => bool) public REQUESTERS;
-
     /// @notice The genesis block timestamp.
     uint256 public immutable GENESIS_BLOCK_TIMESTAMP;
+
+    /// @notice The mapping of requesters. Address -> IsRequester.
+    mapping(address => bool) public REQUESTERS;
 
     /// @notice The mapping of reports. Slot -> Report.
     mapping(uint256 => Report) public reports;
@@ -73,48 +69,40 @@ contract SuccinctLidoOracleV1 is LidoZKOracle {
         require(REQUESTERS[msg.sender], "only requester can request proof");
         require(!reports[uint256(_refSlot)].requested, "already requested");
 
-        (uint64 availableSlot, bytes32 availableBlockRoot) = findAvailableSlot(_refSlot);
+        bytes32 blockRoot = findBlockRoot(_refSlot);
 
         reports[uint256(_refSlot)].requested = true;
 
         ISuccinctGateway(SUCCINCT_GATEWAY).requestCallback{value: msg.value}(
             FUNCTION_ID,
-            abi.encodePacked(availableBlockRoot, LIDO_WITHDRAWAL_CREDENTIAL),
+            abi.encodePacked(blockRoot, LIDO_WITHDRAWAL_CREDENTIAL),
             abi.encode(_refSlot),
             this.handleUpdate.selector,
             _callbackGasLimit
         );
 
-        emit LidoOracleV1Request(_refSlot, availableSlot, availableBlockRoot);
+        emit LidoOracleV1Request(_refSlot, blockRoot);
     }
 
-    /// @notice Attempts to find the first available slot and its beacon root before or at the given slot.
-    /// @param _refSlot The slot to start searching from.
-    /// @return availableSlot The first available slot found.
-    /// @return availablRoot The beacon root of the first available slot found.
-    /// @dev BEACON_ROOTS returns a block root for a given parent block's timestamp, e.g. to get the block root for slot
-    ///      1000, you use the timestamp of slot 1001.
-    function findAvailableSlot(uint64 _refSlot)
-        public
-        view
-        returns (uint64 availableSlot, bytes32 availablRoot)
-    {
-        uint64 currSlot = _refSlot + 1;
-        bool success;
-        bytes memory result;
+    /// @notice Attempts to find the block root for the given slot.
+    /// @param _targetSlot The slot to get the block root for.
+    /// @return blockRoot The beacon block root of the given slot.
+    /// @dev BEACON_ROOTS returns a block root for a given parent block's timestamp. To get the block root for slot
+    ///      N, you use the timestamp of slot N+1. If N+1 is not avaliable, you use the timestamp of slot N+2, and
+    //       so on.
+    function findBlockRoot(uint64 _targetSlot) public view returns (bytes32 blockRoot) {
+        uint256 currBlockTimestamp = GENESIS_BLOCK_TIMESTAMP + ((_targetSlot + 1) * 12);
 
-        for (uint64 i = 0; i < MAX_SLOT_ATTEMPTS; i++) {
-            if (currSlot == 0) {
-                break;
-            }
-
-            uint256 currTimestamp = GENESIS_BLOCK_TIMESTAMP + (currSlot * 12);
-            (success, result) = BEACON_ROOTS.staticcall(abi.encode(currTimestamp));
+        while (currBlockTimestamp <= block.timestamp) {
+            (bool success, bytes memory result) =
+                BEACON_ROOTS.staticcall(abi.encode(currBlockTimestamp));
             if (success && result.length > 0) {
-                return (currSlot - 1, abi.decode(result, (bytes32)));
+                return abi.decode(result, (bytes32));
             }
 
-            currSlot--;
+            unchecked {
+                currBlockTimestamp += 12;
+            }
         }
 
         revert("No available slot found");
