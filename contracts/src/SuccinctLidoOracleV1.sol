@@ -23,11 +23,17 @@ contract SuccinctLidoOracleV1 is LidoZKOracle {
         uint64 refSlot, uint256 clBalancesGwei, uint256 numValidators, uint256 numExitedValidators
     );
 
+    /// @dev Timestamp out of range for the the beacon roots precompile.
+    error TimestampOutOfRange();
+
+    /// @dev No block root is found using the beacon roots precompile.
+    error NoBlockRootFound();
+
     /// @notice The address of the beacon roots precompile.
     /// @dev https://eips.ethereum.org/EIPS/eip-4788
     address internal constant BEACON_ROOTS = 0x000F3df6D732807Ef1319fB7B8bB8522d0Beac02;
 
-    /// @notice The length of the beacon roots history buffer.
+    /// @notice The length of the beacon roots ring buffer.
     uint256 internal constant BEACON_ROOTS_HISTORY_BUFFER_LENGTH = 8191;
 
     /// @notice The address of the Succinct gateway.
@@ -95,10 +101,13 @@ contract SuccinctLidoOracleV1 is LidoZKOracle {
     //       so on.
     function findBlockRoot(uint64 _slot) public view returns (bytes32 blockRoot) {
         uint256 currBlockTimestamp = GENESIS_BLOCK_TIMESTAMP + ((_slot + 1) * 12);
-        uint256 earliestBlockTimestamp = block.timestamp - (BEACON_ROOTS_HISTORY_BUFFER_LENGTH * 12);
 
-        while (currBlockTimestamp > earliestBlockTimestamp && currBlockTimestamp <= block.timestamp)
-        {
+        uint256 earliestBlockTimestamp = block.timestamp - (BEACON_ROOTS_HISTORY_BUFFER_LENGTH * 12);
+        if (currBlockTimestamp <= earliestBlockTimestamp) {
+            revert TimestampOutOfRange();
+        }
+
+        while (currBlockTimestamp <= block.timestamp) {
             (bool success, bytes memory result) =
                 BEACON_ROOTS.staticcall(abi.encode(currBlockTimestamp));
             if (success && result.length > 0) {
@@ -110,7 +119,7 @@ contract SuccinctLidoOracleV1 is LidoZKOracle {
             }
         }
 
-        revert("No available slot found");
+        revert NoBlockRootFound();
     }
 
     /// @notice The callback function for the oracle.
