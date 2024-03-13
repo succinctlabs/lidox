@@ -27,6 +27,9 @@ contract SuccinctLidoOracleV1 is LidoZKOracle {
     /// @dev https://eips.ethereum.org/EIPS/eip-4788
     address internal constant BEACON_ROOTS = 0x000F3df6D732807Ef1319fB7B8bB8522d0Beac02;
 
+    /// @notice The length of the beacon roots history buffer.
+    uint256 internal constant BEACON_ROOTS_HISTORY_BUFFER_LENGTH = 8191;
+
     /// @notice The address of the Succinct gateway.
     address public immutable SUCCINCT_GATEWAY;
 
@@ -92,8 +95,10 @@ contract SuccinctLidoOracleV1 is LidoZKOracle {
     //       so on.
     function findBlockRoot(uint64 _slot) public view returns (bytes32 blockRoot) {
         uint256 currBlockTimestamp = GENESIS_BLOCK_TIMESTAMP + ((_slot + 1) * 12);
+        uint256 earliestBlockTimestamp = block.timestamp - (BEACON_ROOTS_HISTORY_BUFFER_LENGTH * 12);
 
-        while (currBlockTimestamp <= block.timestamp) {
+        while (currBlockTimestamp > earliestBlockTimestamp && currBlockTimestamp <= block.timestamp)
+        {
             (bool success, bytes memory result) =
                 BEACON_ROOTS.staticcall(abi.encode(currBlockTimestamp));
             if (success && result.length > 0) {
